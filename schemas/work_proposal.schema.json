@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proposal_id",
+    "provider_id",
+    "model_name",
+    "question_id",
+    "base_commit",
+    "summary",
+    "rationale",
+    "changed_files",
+    "patch",
+    "commit_message",
+    "validation_notes",
+    "new_questions_added",
+    "questions_resolved",
+    "decisions_added",
+    "requires_human_review"
+  ],
+  "properties": {
+    "proposal_id": { "type": "string" },
+    "provider_id": { "type": "string" },
+    "model_name": { "type": "string" },
+    "question_id": { "type": "string", "pattern": "^UBU-Q[0-9]{4}$" },
+    "base_commit": { "type": "string" },
+    "summary": { "type": "string" },
+    "rationale": { "type": "string" },
+    "changed_files": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["DESIGN.md", "DECISIONS.md", "OPEN_QUESTIONS.md"] }
+    },
+    "patch": { "type": "string" },
+    "commit_message": { "type": "string" },
+    "validation_notes": { "type": "array", "items": { "type": "string" } },
+    "new_questions_added": { "type": "array", "items": { "type": "string", "pattern": "^UBU-Q[0-9]{4}$" } },
+    "questions_resolved": { "type": "array", "items": { "type": "string", "pattern": "^UBU-Q[0-9]{4}$" } },
+    "decisions_added": { "type": "array", "items": { "type": "string", "pattern": "^UBU-D[0-9]{4}$" } },
+    "requires_human_review": { "type": "boolean" }
+  }
+}
+

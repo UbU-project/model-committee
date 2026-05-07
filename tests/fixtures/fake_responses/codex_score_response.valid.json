@@ -1,0 +1,31 @@
+{
+  "scores": [
+    {
+      "proposal_id": "codex-work-001",
+      "score": 95,
+      "patch_applies": true,
+      "implements_selected_work": true,
+      "preserves_question_schema": true,
+      "avoids_unnecessary_scope": true,
+      "decomposition_quality": "not_applicable",
+      "risks": [],
+      "required_fixes": [],
+      "rationale": "Clean fixture patch."
+    },
+    {
+      "proposal_id": "ollama-work-001",
+      "score": 90,
+      "patch_applies": true,
+      "implements_selected_work": true,
+      "preserves_question_schema": true,
+      "avoids_unnecessary_scope": true,
+      "decomposition_quality": "not_applicable",
+      "risks": [],
+      "required_fixes": [],
+      "rationale": "Also valid."
+    }
+  ],
+  "selected_proposal_id": "codex-work-001",
+  "selection_rationale": "Highest score with minimal scope."
+}
+

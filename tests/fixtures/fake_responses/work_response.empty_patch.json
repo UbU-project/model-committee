@@ -1,0 +1,18 @@
+{
+  "proposal_id": "empty",
+  "provider_id": "codex",
+  "model_name": "codex:gpt-5.5",
+  "question_id": "UBU-Q0001",
+  "base_commit": "unknown",
+  "summary": "Empty",
+  "rationale": "Empty",
+  "changed_files": [],
+  "patch": "",
+  "commit_message": "Empty",
+  "validation_notes": [],
+  "new_questions_added": [],
+  "questions_resolved": [],
+  "decisions_added": [],
+  "requires_human_review": false
+}
+

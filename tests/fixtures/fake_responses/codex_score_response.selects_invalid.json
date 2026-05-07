@@ -1,0 +1,19 @@
+{
+  "scores": [
+    {
+      "proposal_id": "bad",
+      "score": 1,
+      "patch_applies": false,
+      "implements_selected_work": false,
+      "preserves_question_schema": false,
+      "avoids_unnecessary_scope": false,
+      "decomposition_quality": "bad",
+      "risks": ["invalid"],
+      "required_fixes": ["fix patch"],
+      "rationale": "Invalid."
+    }
+  ],
+  "selected_proposal_id": "bad",
+  "selection_rationale": "Invalid selection fixture."
+}
+

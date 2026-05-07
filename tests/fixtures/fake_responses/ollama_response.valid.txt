@@ -1,0 +1,19 @@
+```json
+{
+  "proposal_id": "ollama-work-001",
+  "provider_id": "ollama:fake_model",
+  "model_name": "ollama:fake",
+  "question_id": "UBU-Q0001",
+  "base_commit": "unknown",
+  "summary": "Update the example design line differently.",
+  "rationale": "Another valid fixture proposal.",
+  "changed_files": ["DESIGN.md"],
+  "patch": "diff --git a/DESIGN.md b/DESIGN.md\nindex d2a4c9f..3712889 100644\n--- a/DESIGN.md\n+++ b/DESIGN.md\n@@ -1,4 +1,4 @@\n # Design\n \n-Original design line.\n+Ollama design line.\n \n",
+  "commit_message": "Update design line from Ollama",
+  "validation_notes": [],
+  "new_questions_added": [],
+  "questions_resolved": [],
+  "decisions_added": [],
+  "requires_human_review": false
+}
+```

@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local model config
+/config/models.json
+
+# model-committee generated run artifacts
+/runs/
+
+# Root-level Codex scratch artifacts
+/codex_*_events.jsonl
+/codex_*_stderr.txt
+/codex_*_summary.md
+/*.prompt.md

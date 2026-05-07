@@ -1,0 +1,17 @@
+{
+  "proposal_id": "forbidden",
+  "provider_id": "codex",
+  "model_name": "codex:gpt-5.5",
+  "question_id": "UBU-Q0001",
+  "base_commit": "unknown",
+  "summary": "Forbidden",
+  "rationale": "Forbidden",
+  "changed_files": ["DESIGN.md"],
+  "patch": "diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-old\n+new\n",
+  "commit_message": "Forbidden",
+  "validation_notes": [],
+  "new_questions_added": [],
+  "questions_resolved": [],
+  "decisions_added": [],
+  "requires_human_review": false
+}

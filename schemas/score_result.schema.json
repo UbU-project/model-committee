@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scores", "selected_proposal_id", "selection_rationale"],
+  "properties": {
+    "scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "score",
+          "patch_applies",
+          "implements_selected_work",
+          "preserves_question_schema",
+          "avoids_unnecessary_scope",
+          "decomposition_quality",
+          "risks",
+          "required_fixes",
+          "rationale"
+        ],
+        "properties": {
+          "proposal_id": { "type": "string" },
+          "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "patch_applies": { "type": "boolean" },
+          "implements_selected_work": { "type": "boolean" },
+          "preserves_question_schema": { "type": "boolean" },
+          "avoids_unnecessary_scope": { "type": "boolean" },
+          "decomposition_quality": { "type": "string", "enum": ["none", "good", "bad", "not_applicable"] },
+          "risks": { "type": "array", "items": { "type": "string" } },
+          "required_fixes": { "type": "array", "items": { "type": "string" } },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "selected_proposal_id": { "type": "string" },
+    "selection_rationale": { "type": "string" }
+  }
+}
