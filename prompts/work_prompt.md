@@ -56,10 +56,14 @@ Your output must satisfy this schema:
   - `OPEN_QUESTIONS.md`
 - Do not modify `README.md`, `OUTREACH.md`, hidden files, scripts, code files, or generated logs.
 - Preserve the single-line metadata format in `OPEN_QUESTIONS.md`.
+- The `patch` string must be a raw unified diff as produced by `git diff`; do not wrap it in markdown fences or prose.
+- Every file diff must start with `diff --git a/<path> b/<path>`, followed by `--- a/<path>` and `+++ b/<path>`.
+- Every hunk must include accurate `@@ -old_start,old_count +new_start,new_count @@` ranges and enough unchanged context for `git apply --check` to apply without `--recount`.
+- When editing `OPEN_QUESTIONS.md`, anchor hunks with the selected question heading `## {question_id}: {question_title}` and its own `### Resolution` section. Do not use a repeated `### Resolution` heading from an earlier or later question as the edit location.
+- If resolving the selected question, replace the `Unresolved.` text under that selected question's `### Resolution` section and update that same question's metadata line. Do not insert selected-question resolution text into any other question block.
 - Use the existing `UBU-Qxxxx` and `UBU-Dxxxx` numbering conventions.
 - Prefer minimal, auditable changesets.
 - If the selected question is blocked, propose decomposition only if it produces replacement questions with fewer, simpler, or no dependencies.
 - If the selected question is already partially resolved, narrow or clarify it rather than pretending it is fully unresolved.
 
 Return only JSON.
-

@@ -78,9 +78,21 @@ def run_work_generate(
                 if provider.provider_id == "codex"
                 else f"ollama_{provider.provider_id.removeprefix('ollama:')}.patch"
             )
+            validation = validate_patch(repo, proposal.proposal_id, proposal.patch)
+            if validation.normalized_patch is not None:
+                validation_notes = list(proposal.validation_notes)
+                for warning in validation.warnings:
+                    if warning not in validation_notes:
+                        validation_notes.append(warning)
+                proposal = proposal.model_copy(
+                    update={
+                        "changed_files": validation.changed_files,
+                        "patch": validation.normalized_patch,
+                        "validation_notes": validation_notes,
+                    }
+                )
             write_parsed_json(run_dir / "parsed" / parsed_name, proposal)
             (run_dir / "patches" / patch_name).write_text(proposal.patch, encoding="utf-8")
-            validation = validate_patch(repo, proposal.proposal_id, proposal.patch)
             validation_results.append(validation.model_dump())
             if validation.patch_applies and validation.allowlist_passed:
                 valid_count += 1

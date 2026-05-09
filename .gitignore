@@ -217,9 +217,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Local model config
-/config/models.json
-
 # model-committee generated run artifacts
 /runs/
 

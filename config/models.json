@@ -1,0 +1,44 @@
+{
+  "codex": {
+    "enabled": true,
+    "command": "codex",
+    "model": "gpt-5.5",
+    "timeout_seconds": 3600,
+    "weight": 1.0,
+    "sandbox": "read-only",
+    "use_json_events": true,
+    "working_directory": "../ubu-design",
+    "prompt_input_mode": "stdin"
+  },
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "models": [
+      {
+        "name": "sam860/deepseek-r1-0528-qwen3:8b",
+        "enabled": true,
+        "priority": 1,
+        "weight": 0.35,
+        "max_context_tokens": 32768,
+        "timeout_seconds": 1800,
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "repeat_penalty": 1.1,
+        "num_predict": 4096,
+        "notes": "Primary local reasoning fallback"
+      },
+      {
+        "name": "qooba/qwen3-coder-30b-a3b-instruct:q3_k_m",
+        "enabled": true,
+        "priority": 2,
+        "weight": 0.3,
+        "max_context_tokens": 65536,
+        "timeout_seconds": 7200,
+        "temperature": 0.2,
+        "top_p": 0.9,
+        "repeat_penalty": 1.1,
+        "num_predict": 4096,
+        "notes": "Large local coding proposal model; may be slow/heavy"
+      }
+    ]
+  }
+}

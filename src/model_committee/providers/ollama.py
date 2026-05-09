@@ -30,6 +30,7 @@ class OllamaWorkProvider:
             "model": self.model_config.name,
             "prompt": prompt_path.read_text(encoding="utf-8"),
             "stream": False,
+            "think": False,
             "options": {
                 "temperature": self.model_config.temperature,
                 "top_p": self.model_config.top_p,

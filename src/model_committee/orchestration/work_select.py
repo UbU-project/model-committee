@@ -36,7 +36,8 @@ def run_work_select(run_dir: Path) -> None:
             encoding="utf-8",
         )
         raise SelectionError("selected proposal failed mechanical validation")
-    (run_dir / "patches" / "selected.patch").write_text(proposal.patch, encoding="utf-8")
+    selected_patch = validation.normalized_patch or proposal.patch
+    (run_dir / "patches" / "selected.patch").write_text(selected_patch, encoding="utf-8")
     (run_dir / "commit_message.txt").write_text(proposal.commit_message, encoding="utf-8")
     write_review(run_dir, manifest, proposal, score, validation)
     manifest.status = RunStatus.SELECTED

@@ -34,6 +34,7 @@ def test_ollama_provider_uses_configured_base_url(monkeypatch, tmp_path):
 
         def post(self, url, json):
             seen["url"] = url
+            seen["body"] = json
             return Response()
 
     monkeypatch.setattr("model_committee.providers.ollama.httpx.Client", Client)
@@ -45,6 +46,8 @@ def test_ollama_provider_uses_configured_base_url(monkeypatch, tmp_path):
     )
     provider.generate_work_proposal(tmp_path, prompt, tmp_path / "schema.json")
     assert seen["url"] == "http://localhost:11434/api/generate"
+    assert seen["body"]["think"] is False
+    assert "think" not in seen["body"]["options"]
 
 
 def test_config_rejects_nonlocal_ollama_base_url():
