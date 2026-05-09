@@ -13,6 +13,7 @@ def test_work_prompt_requires_raw_git_diff_and_selected_question_anchor():
     prompt, warn = render_work_prompt(repo, question, "fixture")
 
     assert warn is False
+    assert "Do not include hidden reasoning, `<think>` tags" in prompt
     assert "The `patch` string must be a raw unified diff as produced by `git diff`" in prompt
     assert "git apply --check" in prompt
     assert "## UBU-Q0001: Example Question" in prompt

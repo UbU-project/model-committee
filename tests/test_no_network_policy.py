@@ -44,9 +44,14 @@ def test_ollama_provider_uses_configured_base_url(monkeypatch, tmp_path):
         OllamaConfig(base_url="http://localhost:11434"),
         OllamaModelConfig(name="m"),
     )
-    provider.generate_work_proposal(tmp_path, prompt, tmp_path / "schema.json")
+    schema = tmp_path / "schema.json"
+    schema.write_text('{"type":"object"}', encoding="utf-8")
+    provider.generate_work_proposal(tmp_path, prompt, schema)
     assert seen["url"] == "http://localhost:11434/api/generate"
     assert seen["body"]["think"] is False
+    assert seen["body"]["format"] == {"type": "object"}
+    assert "<think>" in seen["body"]["system"]
+    assert seen["body"]["prompt"].startswith("/no_think\n")
     assert "think" not in seen["body"]["options"]
 
 

@@ -29,3 +29,6 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     assert (run_dir / "patches" / "selected.patch").exists()
     assert (run_dir / "commit_message.txt").exists()
     assert (run_dir / "review.md").exists()
+    review_text = (run_dir / "review.md").read_text(encoding="utf-8")
+    assert "git -C " in review_text
+    assert " commit -S -F " in review_text

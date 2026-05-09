@@ -47,6 +47,7 @@ Your output must satisfy this schema:
 ## Requirements
 
 - Return exactly one JSON object.
+- Do not include hidden reasoning, `<think>` tags, markdown fences, or explanatory text outside the JSON object.
 - All fields are required.
 - Arrays may be empty.
 - The patch must be a full git-diff-style patch.

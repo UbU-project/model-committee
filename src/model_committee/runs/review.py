@@ -53,7 +53,7 @@ Selected proposal: `{proposal.proposal_id}`
 
 ```bash
 git -C {manifest.repo_path} apply "$(pwd)/{run_dir}/patches/selected.patch"
-git -C {manifest.repo_path} commit -F "$(pwd)/{run_dir}/commit_message.txt"
+git -C {manifest.repo_path} commit -S -F "$(pwd)/{run_dir}/commit_message.txt"
 ```
 """
     (run_dir / "review.md").write_text(text, encoding="utf-8")

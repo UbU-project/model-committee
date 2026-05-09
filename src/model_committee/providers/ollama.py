@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -7,6 +8,13 @@ from model_committee.config import OllamaConfig, OllamaModelConfig
 from model_committee.errors import ProviderError
 from model_committee.responses.json_extract import extract_json_object
 from model_committee.responses.schemas import WorkProposal
+
+NO_THINKING_SYSTEM_PROMPT = (
+    "Thinking mode is disabled. Return only the final JSON object. "
+    "Do not include hidden reasoning, <think> tags, markdown fences, or prose."
+)
+
+NO_THINKING_PROMPT_PREFIX = "/no_think\n"
 
 
 def safe_model_name(name: str) -> str:
@@ -24,13 +32,15 @@ class OllamaWorkProvider:
     def generate_work_proposal(
         self, run_dir: Path, prompt_path: Path, schema_path: Path
     ) -> WorkProposal:
-        del schema_path
         response_path = run_dir / "responses" / f"ollama_{self.safe_name}_response.txt"
+        prompt = prompt_path.read_text(encoding="utf-8")
         body = {
             "model": self.model_config.name,
-            "prompt": prompt_path.read_text(encoding="utf-8"),
+            "prompt": NO_THINKING_PROMPT_PREFIX + prompt,
+            "system": NO_THINKING_SYSTEM_PROMPT,
             "stream": False,
             "think": False,
+            "format": json.loads(schema_path.read_text(encoding="utf-8")),
             "options": {
                 "temperature": self.model_config.temperature,
                 "top_p": self.model_config.top_p,
