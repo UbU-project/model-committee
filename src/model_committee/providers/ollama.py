@@ -3,9 +3,10 @@ import re
 from pathlib import Path
 
 import httpx
+from pydantic import ValidationError
 
 from model_committee.config import OllamaConfig, OllamaModelConfig
-from model_committee.errors import ProviderError
+from model_committee.errors import ModelOutputError, ProviderError
 from model_committee.responses.json_extract import extract_json_object
 from model_committee.responses.schemas import WorkProposal
 
@@ -56,11 +57,21 @@ class OllamaWorkProvider:
                 result.raise_for_status()
         except httpx.HTTPError as exc:
             message = f"ollama request failed for {self.model_config.name}: {exc}"
-            raise ProviderError(message) from exc
+            raise ProviderError(
+                message,
+                timeout_seconds=self.model_config.timeout_seconds,
+                response_path=str(response_path),
+            ) from exc
         text = result.json().get("response", "")
         response_path.parent.mkdir(parents=True, exist_ok=True)
         response_path.write_text(text, encoding="utf-8")
-        return WorkProposal.model_validate(extract_json_object(text))
+        try:
+            return WorkProposal.model_validate(extract_json_object(text))
+        except (ModelOutputError, ValidationError) as exc:
+            raise ModelOutputError(
+                f"ollama output failed schema validation for {self.model_config.name}: {exc}",
+                response_path=str(response_path),
+            ) from exc
 
 
 def check_ollama_reachable(base_url: str) -> tuple[bool, str]:

@@ -21,3 +21,14 @@ def test_invalid_fixtures_report_expected_codes():
         report = check_repo(f"tests/fixtures/{fixture}")
         assert report.status == "failed"
         assert code in {failure.code for failure in report.hard_failures}
+
+
+def test_missing_canonical_file_is_hard_consistency_failure(tmp_path):
+    (tmp_path / "DESIGN.md").write_text("# Design\n", encoding="utf-8")
+    (tmp_path / "DECISIONS.md").write_text("# Decisions\n", encoding="utf-8")
+
+    report = check_repo(tmp_path)
+
+    assert report.status == "failed"
+    assert {failure.code for failure in report.hard_failures} == {"MISSING_REPO_FILE"}
+    assert "OPEN_QUESTIONS.md" in report.hard_failures[0].message

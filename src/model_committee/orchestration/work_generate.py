@@ -3,7 +3,12 @@ from pathlib import Path
 
 from model_committee.config import ModelCommitteeConfig
 from model_committee.consistency.checker import check_repo
-from model_committee.errors import ConsistencyError, ModelOutputError, PatchValidationError
+from model_committee.errors import (
+    ConsistencyError,
+    ModelOutputError,
+    PatchValidationError,
+    ProviderError,
+)
 from model_committee.markdown.questions_parser import parse_questions_file
 from model_committee.patches.validate import validate_patch
 from model_committee.providers.codex import CodexProvider
@@ -13,7 +18,15 @@ from model_committee.prompts.work_prompt import render_work_prompt
 from model_committee.ranking.answerability import compute_answerability, is_work_eligible
 from model_committee.responses.schema_files import copy_schema_files_to_run
 from model_committee.runs.layout import create_run_dir
-from model_committee.runs.manifest import RunStatus, write_manifest
+from model_committee.runs.manifest import RunStatus, append_provider_failure, write_manifest
+
+
+def _provider_model_name(provider) -> str | None:
+    if hasattr(provider, "model_config"):
+        return getattr(provider.model_config, "name", None)
+    if hasattr(provider, "config"):
+        return getattr(provider.config, "model", None)
+    return None
 
 
 def run_work_generate(
@@ -97,10 +110,24 @@ def run_work_generate(
             if validation.patch_applies and validation.allowlist_passed:
                 valid_count += 1
             manifest.providers_succeeded.append(provider.provider_id)
-        except (ModelOutputError, PatchValidationError, ValueError, OSError) as exc:
-            manifest.providers_failed.append(f"{provider.provider_id}: {exc}")
+        except (ProviderError, ModelOutputError, PatchValidationError, ValueError, OSError) as exc:
+            append_provider_failure(
+                manifest,
+                provider_id=provider.provider_id,
+                model_name=_provider_model_name(provider),
+                phase="work-generate",
+                exc=exc,
+                quorum_met=valid_count > 0,
+            )
             if provider.provider_id == "codex":
+                manifest.status = RunStatus.FAILED
+                manifest.phase = "work-generate"
+                for failure in manifest.provider_failures:
+                    failure.quorum_met = valid_count > 0
+                write_manifest(run_dir, manifest)
                 raise
+    for failure in manifest.provider_failures:
+        failure.quorum_met = valid_count > 0
     (run_dir / "parsed" / "patch_validation_results.json").write_text(
         json.dumps(validation_results, indent=2) + "\n", encoding="utf-8"
     )

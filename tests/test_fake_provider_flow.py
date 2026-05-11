@@ -1,6 +1,11 @@
 import json
+from pathlib import Path
 
 from model_committee.cli import main
+from model_committee.config import ModelCommitteeConfig
+from model_committee.errors import ProviderError
+from model_committee.orchestration import work_generate
+from model_committee.responses.schemas import WorkProposal
 
 
 def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
@@ -33,3 +38,76 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     review_text = (run_dir / "review.md").read_text(encoding="utf-8")
     assert "git -C " in review_text
     assert " commit -S -F " in review_text
+
+
+def test_secondary_provider_failure_is_logged_without_aborting(
+    git_fixture_repo, tmp_path, monkeypatch
+):
+    class PassingCodexProvider:
+        provider_id = "codex"
+
+        def __init__(self, config, repo):
+            self.config = config
+            self.repo = repo
+
+        def generate_work_proposal(self, run_dir, prompt_path, schema_path):
+            del run_dir, prompt_path, schema_path
+            return WorkProposal.model_validate_json(
+                Path("tests/fixtures/fake_responses/codex_work_response.valid.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+    class FailingOllamaProvider:
+        provider_id = "ollama:failing"
+
+        def __init__(self, ollama_config, model_config):
+            del ollama_config
+            self.model_config = model_config
+
+        def generate_work_proposal(self, run_dir, prompt_path, schema_path):
+            del run_dir, prompt_path, schema_path
+            raise ProviderError(
+                "ollama unavailable",
+                timeout_seconds=17,
+                response_path="runs/example/responses/ollama_failing_response.txt",
+            )
+
+    monkeypatch.setattr(work_generate, "CodexProvider", PassingCodexProvider)
+    monkeypatch.setattr(work_generate, "OllamaWorkProvider", FailingOllamaProvider)
+
+    config = ModelCommitteeConfig.model_validate(
+        {
+            "ollama": {
+                "models": [
+                    {
+                        "name": "failing",
+                        "enabled": True,
+                        "timeout_seconds": 17,
+                    }
+                ]
+            }
+        }
+    )
+
+    run_dir = work_generate.run_work_generate(
+        git_fixture_repo,
+        "UBU-Q0001",
+        config,
+        None,
+        tmp_path / "runs",
+        False,
+        "test",
+    )
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "waiting_for_score"
+    assert manifest["providers_succeeded"] == ["codex"]
+    assert manifest["providers_failed"]
+    failure = manifest["provider_failures"][0]
+    assert failure["provider_id"] == "ollama:failing"
+    assert failure["model_name"] == "failing"
+    assert failure["phase"] == "work-generate"
+    assert failure["failure_class"] == "ProviderError"
+    assert failure["timeout_seconds"] == 17
+    assert failure["quorum_met"] is True

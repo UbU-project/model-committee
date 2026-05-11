@@ -3,9 +3,15 @@ from pathlib import Path
 
 from model_committee.consistency.decision_refs import nonexistent_decision_refs
 from model_committee.consistency.question_graph import dependency_edges, find_dependency_cycles
+from model_committee.constants import (
+    DECISIONS_PROMPT_TOKEN_HARD_WARNING_LIMIT,
+    DECISIONS_PROMPT_TOKEN_WARNING_LIMIT,
+    ESTIMATED_CHARS_PER_TOKEN,
+    REQUIRED_REPO_FILES,
+)
 from model_committee.errors import ParseError
-from model_committee.markdown.decisions_parser import parse_decisions_file
-from model_committee.markdown.questions_parser import parse_questions_file
+from model_committee.markdown.decisions_parser import parse_decisions_text
+from model_committee.markdown.questions_parser import parse_questions_text
 from model_committee.responses.schemas import ConsistencyIssue, ConsistencyReport
 
 
@@ -13,9 +19,31 @@ def check_repo(repo: Path) -> ConsistencyReport:
     repo = Path(repo)
     hard: list[ConsistencyIssue] = []
     warnings: list[ConsistencyIssue] = []
+    missing_files = [
+        filename for filename in REQUIRED_REPO_FILES if not (repo / filename).is_file()
+    ]
+    if missing_files:
+        return ConsistencyReport(
+            status="failed",
+            hard_failures=[
+                ConsistencyIssue(
+                    code="MISSING_REPO_FILE",
+                    message=f"Missing canonical repo file: {filename}",
+                )
+                for filename in missing_files
+            ],
+            warnings=[],
+            question_count=0,
+            decision_count=0,
+            dependency_edges=[],
+        )
+
     try:
-        questions = parse_questions_file(repo / "OPEN_QUESTIONS.md")
-        decisions = parse_decisions_file(repo / "DECISIONS.md")
+        (repo / "DESIGN.md").read_text(encoding="utf-8")
+        decisions_text = (repo / "DECISIONS.md").read_text(encoding="utf-8")
+        questions_text = (repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8")
+        questions = parse_questions_text(questions_text)
+        decisions = parse_decisions_text(decisions_text)
     except ParseError as exc:
         text = str(exc)
         code = (
@@ -30,6 +58,47 @@ def check_repo(repo: Path) -> ConsistencyReport:
             question_count=0,
             decision_count=0,
             dependency_edges=[],
+        )
+    except OSError as exc:
+        return ConsistencyReport(
+            status="failed",
+            hard_failures=[
+                ConsistencyIssue(
+                    code="CANNOT_READ_REPO_FILE",
+                    message=f"Could not read canonical repo file: {exc}",
+                )
+            ],
+            warnings=[],
+            question_count=0,
+            decision_count=0,
+            dependency_edges=[],
+        )
+
+    estimated_decision_tokens = max(
+        1,
+        (len(decisions_text) + ESTIMATED_CHARS_PER_TOKEN - 1) // ESTIMATED_CHARS_PER_TOKEN,
+    )
+    if estimated_decision_tokens >= DECISIONS_PROMPT_TOKEN_HARD_WARNING_LIMIT:
+        warnings.append(
+            ConsistencyIssue(
+                code="DECISIONS_PROMPT_BUDGET_HARD_WARNING",
+                message=(
+                    "DECISIONS.md is about "
+                    f"{estimated_decision_tokens} estimated tokens, exceeding the "
+                    f"{DECISIONS_PROMPT_TOKEN_HARD_WARNING_LIMIT} token hard warning threshold."
+                ),
+            )
+        )
+    elif estimated_decision_tokens >= DECISIONS_PROMPT_TOKEN_WARNING_LIMIT:
+        warnings.append(
+            ConsistencyIssue(
+                code="DECISIONS_PROMPT_BUDGET_WARNING",
+                message=(
+                    "DECISIONS.md is about "
+                    f"{estimated_decision_tokens} estimated tokens, exceeding the "
+                    f"{DECISIONS_PROMPT_TOKEN_WARNING_LIMIT} token warning threshold."
+                ),
+            )
         )
 
     question_counts = Counter(question.question_id for question in questions)

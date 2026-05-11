@@ -26,6 +26,15 @@ Base commit: `{base_commit}`
 {patch_validation_results_json}
 ```
 
+## Provider weights
+
+Use these static v0.1 trust weights as context when judging proposal quality. Do not use
+raw one-provider-one-vote counting.
+
+```json
+{provider_weights_json}
+```
+
 ## JSON Schema
 
 Your output must satisfy this schema:
@@ -58,4 +67,3 @@ Rules:
 - Do not select a proposal whose patch failed mechanical validation unless all proposals failed.
 
 Return only JSON.
-

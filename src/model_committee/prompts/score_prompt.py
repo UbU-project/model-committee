@@ -10,6 +10,7 @@ def render_score_prompt(
     base_commit: str,
     candidate_proposals: list[dict],
     patch_validation_results: list[dict],
+    provider_weights: dict[str, float] | None = None,
 ) -> tuple[str, bool]:
     template = Path("prompts/score_prompt.md").read_text(encoding="utf-8")
     rendered = template.format(
@@ -19,6 +20,7 @@ def render_score_prompt(
         base_commit=base_commit,
         candidate_proposals_json=json.dumps(candidate_proposals, indent=2),
         patch_validation_results_json=json.dumps(patch_validation_results, indent=2),
+        provider_weights_json=json.dumps(provider_weights or {}, indent=2),
         score_result_schema=json.dumps(SCORE_RESULT_SCHEMA, indent=2),
     )
     return rendered, len(rendered) > PROMPT_SIZE_WARNING_LIMIT

@@ -2,6 +2,7 @@
 name = "model-committee"
 version = "0.1.0"
 description = "Bootstrap model committee automation for the UbU project"
+license = "MPL-2.0"
 requires-python = ">=3.12"
 dependencies = [
   "pydantic>=2.0",

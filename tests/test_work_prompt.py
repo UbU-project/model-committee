@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from model_committee.markdown.questions_parser import parse_questions_file
+from model_committee.prompts.score_prompt import render_score_prompt
 from model_committee.prompts.work_prompt import render_work_prompt
 
 
@@ -19,3 +20,23 @@ def test_work_prompt_requires_raw_git_diff_and_selected_question_anchor():
     assert "## UBU-Q0001: Example Question" in prompt
     assert "its own `### Resolution` section" in prompt
     assert "Do not insert selected-question resolution text into any other question block." in prompt
+
+
+def test_score_prompt_includes_static_provider_weights():
+    repo = Path("tests/fixtures/valid_repo")
+    question = {
+        item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
+    }["UBU-Q0001"]
+
+    prompt, warn = render_score_prompt(
+        question,
+        "fixture",
+        [],
+        [],
+        {"codex": 1.0, "ollama:local": 0.35},
+    )
+
+    assert warn is False
+    assert "## Provider weights" in prompt
+    assert '"codex": 1.0' in prompt
+    assert "raw one-provider-one-vote counting" in prompt
