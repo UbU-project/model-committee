@@ -7,6 +7,14 @@ from model_committee.responses.schemas import ScoreResult, WorkProposal
 from model_committee.runs.manifest import RunStatus, load_manifest, write_manifest
 from model_committee.runs.review import write_review
 
+COMMIT_MESSAGE_PREFIX = "UMC: "
+
+
+def format_commit_message(commit_message: str) -> str:
+    if commit_message.startswith(COMMIT_MESSAGE_PREFIX):
+        return commit_message
+    return f"{COMMIT_MESSAGE_PREFIX}{commit_message}"
+
 
 def run_work_select(run_dir: Path) -> None:
     manifest = load_manifest(run_dir)
@@ -38,7 +46,10 @@ def run_work_select(run_dir: Path) -> None:
         raise SelectionError("selected proposal failed mechanical validation")
     selected_patch = validation.normalized_patch or proposal.patch
     (run_dir / "patches" / "selected.patch").write_text(selected_patch, encoding="utf-8")
-    (run_dir / "commit_message.txt").write_text(proposal.commit_message, encoding="utf-8")
+    (run_dir / "commit_message.txt").write_text(
+        format_commit_message(proposal.commit_message),
+        encoding="utf-8",
+    )
     write_review(run_dir, manifest, proposal, score, validation)
     manifest.status = RunStatus.SELECTED
     manifest.phase = "work-select"

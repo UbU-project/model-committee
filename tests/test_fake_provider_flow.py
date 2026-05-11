@@ -27,7 +27,8 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "selected"
     assert (run_dir / "patches" / "selected.patch").exists()
-    assert (run_dir / "commit_message.txt").exists()
+    commit_message = (run_dir / "commit_message.txt").read_text(encoding="utf-8")
+    assert commit_message.startswith("UMC: ")
     assert (run_dir / "review.md").exists()
     review_text = (run_dir / "review.md").read_text(encoding="utf-8")
     assert "git -C " in review_text
