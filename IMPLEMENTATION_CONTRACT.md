@@ -1447,13 +1447,17 @@ ranked = sorted(
     key=lambda q: (
         q.answerability_score,
         q.automation_likelihood_score or -1,
+        open_dependent_count[q.question_id],
         q.importance_score or -1,
         -(q.risk_score or 101),
-        q.question_id,
+        -int(q.question_id.removeprefix("UBU-Q")),
     ),
     reverse=True,
 )
 ```
+
+`open_dependent_count` is the number of other currently open questions that directly
+list the candidate in `Depends on`.
 
 ### 21.5 Ranking Report Schema
 

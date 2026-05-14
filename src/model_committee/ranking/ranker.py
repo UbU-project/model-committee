@@ -3,9 +3,26 @@ from model_committee.ranking.answerability import compute_answerability, is_work
 from model_committee.responses.schemas import RankedQuestion, RankingReport
 
 
+def _open_dependent_counts(open_questions: list[Question]) -> dict[str, int]:
+    open_question_ids = {question.question_id for question in open_questions}
+    return {
+        question_id: sum(
+            question_id in other.metadata.depends_on
+            for other in open_questions
+            if other.question_id != question_id
+        )
+        for question_id in open_question_ids
+    }
+
+
+def _earlier_question_sort_key(question_id: str) -> int:
+    return -int(question_id.removeprefix("UBU-Q"))
+
+
 def rank_questions(questions: list[Question]) -> RankingReport:
     by_id = {question.question_id: question for question in questions}
     open_questions = [question for question in questions if question.metadata.status == "Open"]
+    dependent_counts = _open_dependent_counts(open_questions)
     ranked_models = [
         RankedQuestion(
             question_id=question.question_id,
@@ -27,9 +44,10 @@ def rank_questions(questions: list[Question]) -> RankingReport:
         key=lambda q: (
             q.answerability_score,
             q.automation_likelihood_score or -1,
+            dependent_counts[q.question_id],
             q.importance_score or -1,
             -(q.risk_score or 101),
-            q.question_id,
+            _earlier_question_sort_key(q.question_id),
         ),
         reverse=True,
     )
