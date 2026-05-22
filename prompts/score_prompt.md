@@ -1,8 +1,14 @@
-# Model-Committee Work Scoring Request
+# Model-Committee Cross-Scoring Request
 
 You are scoring candidate work proposals for the UbU `model-committee` process.
 
 Return exactly one JSON object. Do not return prose outside the JSON object.
+
+This is a v0.2 cross-score. You are not making the final selection; model-committee
+will aggregate valid cross-scores locally.
+
+Scoring provider: `{scoring_provider_id}`
+Authoring provider for the candidate proposal(s): `{author_provider_id}`
 
 ## Selected question
 
@@ -28,8 +34,8 @@ Base commit: `{base_commit}`
 
 ## Provider weights
 
-Use these static v0.1 trust weights as context when judging proposal quality. Do not use
-raw one-provider-one-vote counting.
+Provider weights are historical diagnostic context only in v0.2. Do not use
+self-trust or author identity as score evidence.
 
 ```json
 {provider_weights_json}
@@ -60,10 +66,11 @@ Consider:
 
 Rules:
 
-- `selected_proposal_id` must refer to one scored proposal.
-- There is no minimum acceptable score in v0.1.
-- Manual override is not allowed in v0.1.
+- Score every proposal in this prompt.
+- `selected_proposal_id` must refer to one scored proposal from this prompt.
+- Manual override is not allowed in v0.2.
 - Prefer a patch that is valid, minimal, auditable, and directly responsive.
-- Do not select a proposal whose patch failed mechanical validation unless all proposals failed.
+- Do not select a proposal whose patch failed mechanical validation.
+- Do not score your own provider's proposal unless explicitly asked for diagnostic self-score.
 
 Return only JSON.

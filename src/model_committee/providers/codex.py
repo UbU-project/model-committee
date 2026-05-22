@@ -111,14 +111,17 @@ class CodexProvider:
     def score_work_proposals(
         self, run_dir: Path, prompt_path: Path, schema_path: Path
     ) -> ScoreResult:
-        output_path = run_dir / "responses" / "codex_score_response.json"
-        stderr_path = run_dir / "responses" / "codex_score_stderr.txt"
+        artifact_stem = (
+            "codex_score" if prompt_path.name == "codex_score_prompt.md" else prompt_path.stem
+        )
+        output_path = run_dir / "responses" / f"{artifact_stem}_response.json"
+        stderr_path = run_dir / "responses" / f"{artifact_stem}_stderr.txt"
         data = self._run(
             run_dir,
             prompt_path,
             schema_path,
             output_path,
-            run_dir / "responses" / "codex_score_events.jsonl",
+            run_dir / "responses" / f"{artifact_stem}_events.jsonl",
             stderr_path,
         )
         try:

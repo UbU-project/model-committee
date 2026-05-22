@@ -5,6 +5,13 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from model_committee.responses.schemas import (
+    DisagreementFlag,
+    ProposalScoreAggregate,
+    QuorumResult,
+    ScoreMatrixRow,
+)
+
 
 class RunStatus(str, Enum):
     CREATED = "created"
@@ -12,6 +19,7 @@ class RunStatus(str, Enum):
     WAITING_FOR_SCORE = "waiting_for_score"
     SCORED = "scored"
     SELECTED = "selected"
+    HUMAN_REVIEW_REQUIRED = "human_review_required"
     FAILED = "failed"
 
 
@@ -28,7 +36,26 @@ class ProviderFailureEvent(BaseModel):
     quorum_met: bool | None = None
 
 
+class ProviderAttemptEvent(BaseModel):
+    provider_id: str
+    model_name: str | None = None
+    phase: str
+    target_proposal_id: str | None = None
+    response_path: str | None = None
+    stderr_path: str | None = None
+
+
+class ProviderSuccessEvent(BaseModel):
+    provider_id: str
+    model_name: str | None = None
+    phase: str
+    target_proposal_id: str | None = None
+    response_path: str | None = None
+    parsed_path: str | None = None
+
+
 class RunManifest(BaseModel):
+    schema_version: str = "0.2"
     run_id: str
     created_at_utc: str
     repo_path: str
@@ -41,7 +68,21 @@ class RunManifest(BaseModel):
     providers_attempted: list[str] = Field(default_factory=list)
     providers_succeeded: list[str] = Field(default_factory=list)
     providers_failed: list[str] = Field(default_factory=list)
+    provider_attempts: list[ProviderAttemptEvent] = Field(default_factory=list)
+    provider_successes: list[ProviderSuccessEvent] = Field(default_factory=list)
     provider_failures: list[ProviderFailureEvent] = Field(default_factory=list)
+    score_matrix: list[ScoreMatrixRow] = Field(default_factory=list)
+    score_aggregates: list[ProposalScoreAggregate] = Field(default_factory=list)
+    cross_score_count: int = 0
+    score_mean: float | None = None
+    score_spread: int | None = None
+    frontier_score_gap: int | None = None
+    disagreement_flags: list[DisagreementFlag] = Field(default_factory=list)
+    quorum_result: QuorumResult | None = None
+    selected_proposal_id: str | None = None
+    automated_selection_valid: bool = False
+    human_review_required: bool = False
+    artifact_publication_status: str = "not_applicable"
 
 
 def utc_now_text() -> str:
@@ -58,6 +99,57 @@ def write_manifest(run_dir: Path, manifest: RunManifest) -> None:
 
 def load_manifest(run_dir: Path) -> RunManifest:
     return RunManifest.model_validate_json((run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+
+def _append_unique(items: list[str], value: str) -> None:
+    if value not in items:
+        items.append(value)
+
+
+def append_provider_attempt(
+    manifest: RunManifest,
+    *,
+    provider_id: str,
+    model_name: str | None,
+    phase: str,
+    target_proposal_id: str | None = None,
+    response_path: str | None = None,
+    stderr_path: str | None = None,
+) -> None:
+    _append_unique(manifest.providers_attempted, provider_id)
+    manifest.provider_attempts.append(
+        ProviderAttemptEvent(
+            provider_id=provider_id,
+            model_name=model_name,
+            phase=phase,
+            target_proposal_id=target_proposal_id,
+            response_path=response_path,
+            stderr_path=stderr_path,
+        )
+    )
+
+
+def append_provider_success(
+    manifest: RunManifest,
+    *,
+    provider_id: str,
+    model_name: str | None,
+    phase: str,
+    target_proposal_id: str | None = None,
+    response_path: str | None = None,
+    parsed_path: str | None = None,
+) -> None:
+    _append_unique(manifest.providers_succeeded, provider_id)
+    manifest.provider_successes.append(
+        ProviderSuccessEvent(
+            provider_id=provider_id,
+            model_name=model_name,
+            phase=phase,
+            target_proposal_id=target_proposal_id,
+            response_path=response_path,
+            parsed_path=parsed_path,
+        )
+    )
 
 
 def append_provider_failure(

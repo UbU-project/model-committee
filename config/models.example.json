@@ -10,6 +10,19 @@
     "working_directory": "../ubu-design",
     "prompt_input_mode": "stdin"
   },
+  "claude": {
+    "enabled": true,
+    "command": "claude",
+    "model": "sonnet",
+    "timeout_seconds": 3600,
+    "weight": 1.0,
+    "tools": "",
+    "max_turns": 1,
+    "bare": true,
+    "minimum_version": "2.1.146",
+    "doctor_smoke_test": false,
+    "max_budget_usd": null
+  },
   "ollama": {
     "base_url": "http://localhost:11434",
     "models": [

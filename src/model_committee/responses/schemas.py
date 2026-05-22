@@ -99,6 +99,63 @@ class ScoreResult(BaseModel):
         return self
 
 
+class SchemaValidationStatus(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    valid: bool
+    message: str | None = None
+    response_path: str | None = None
+    stderr_path: str | None = None
+
+
+class ScoreMatrixRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    proposal_id: str
+    author_provider: str
+    scorer_provider: str
+    score: int | None = Field(default=None, ge=0, le=100)
+    valid: bool
+    rationale: str
+    required_fixes: list[str]
+    risks: list[str]
+    schema_validation: SchemaValidationStatus
+    diagnostic_self_score: bool = False
+
+
+class DisagreementFlag(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    severity: Literal["warning", "critical"]
+    proposal_id: str | None = None
+    message: str
+
+
+class ProposalScoreAggregate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    proposal_id: str
+    author_provider: str
+    cross_score_count: int
+    score_mean: float | None = None
+    score_spread: int | None = None
+    frontier_score_gap: int | None = None
+    disagreement_flags: list[DisagreementFlag] = Field(default_factory=list)
+
+
+class QuorumResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    valid: bool
+    human_review_required: bool
+    selected_proposal_id: str | None = None
+    selected_score: float | None = None
+    selected_cross_score_count: int = 0
+    blocked_reasons: list[str] = Field(default_factory=list)
+    manual_override: bool = False
+
+
 class ConsistencyIssue(BaseModel):
     code: str
     message: str

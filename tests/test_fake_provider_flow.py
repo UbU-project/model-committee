@@ -31,11 +31,22 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     assert main(["work-select", "--run", str(run_dir)]) == 0
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "selected"
+    assert manifest["schema_version"] == "0.2"
+    assert "provider_attempts" in manifest
+    assert "provider_successes" in manifest
+    assert manifest["score_matrix"]
+    assert manifest["cross_score_count"] >= 1
+    assert manifest["quorum_result"]["valid"] is True
+    assert manifest["artifact_publication_status"] == "operator_pending"
     assert (run_dir / "patches" / "selected.patch").exists()
     commit_message = (run_dir / "commit_message.txt").read_text(encoding="utf-8")
     assert commit_message.startswith("UMC: ")
     assert (run_dir / "review.md").exists()
     review_text = (run_dir / "review.md").read_text(encoding="utf-8")
+    assert "## Cross-Score Matrix" in review_text
+    assert "## Disagreement Flags" in review_text
+    assert "RUN_ID=" in review_text
+    assert "git -C ../model-committee-artifacts commit -S" in review_text
     assert "git -C " in review_text
     assert " commit -S -F " in review_text
 
@@ -78,6 +89,9 @@ def test_secondary_provider_failure_is_logged_without_aborting(
 
     config = ModelCommitteeConfig.model_validate(
         {
+            "claude": {
+                "enabled": False,
+            },
             "ollama": {
                 "models": [
                     {
@@ -86,7 +100,7 @@ def test_secondary_provider_failure_is_logged_without_aborting(
                         "timeout_seconds": 17,
                     }
                 ]
-            }
+            },
         }
     )
 

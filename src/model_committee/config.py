@@ -20,6 +20,20 @@ class CodexConfig(BaseModel):
     prompt_input_mode: str = "stdin"
 
 
+class ClaudeConfig(BaseModel):
+    enabled: bool = True
+    command: str = "claude"
+    model: str = "sonnet"
+    timeout_seconds: int = 3600
+    weight: float = 1.0
+    tools: str = ""
+    max_turns: int = 1
+    bare: bool = True
+    minimum_version: str = "2.1.146"
+    doctor_smoke_test: bool = False
+    max_budget_usd: float | None = None
+
+
 class OllamaModelConfig(BaseModel):
     name: str
     enabled: bool = True
@@ -51,6 +65,7 @@ class OllamaConfig(BaseModel):
 
 class ModelCommitteeConfig(BaseModel):
     codex: CodexConfig = Field(default_factory=CodexConfig)
+    claude: ClaudeConfig = Field(default_factory=ClaudeConfig)
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
 
 

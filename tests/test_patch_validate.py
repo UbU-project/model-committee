@@ -196,6 +196,23 @@ def test_work_select_uses_normalized_patch(git_fixture_repo, tmp_path):
     (run_dir / "parsed" / "score_result.json").write_text(
         json.dumps(score, indent=2) + "\n", encoding="utf-8"
     )
+    score_matrix = [
+        {
+            "proposal_id": "proposal",
+            "author_provider": "codex",
+            "scorer_provider": "claude",
+            "score": 100,
+            "valid": True,
+            "rationale": "Valid.",
+            "required_fixes": [],
+            "risks": [],
+            "schema_validation": {"valid": True},
+            "diagnostic_self_score": False,
+        }
+    ]
+    (run_dir / "parsed" / "score_matrix.json").write_text(
+        json.dumps(score_matrix, indent=2) + "\n", encoding="utf-8"
+    )
 
     run_work_select(run_dir)
 

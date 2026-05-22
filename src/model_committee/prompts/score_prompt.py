@@ -11,6 +11,8 @@ def render_score_prompt(
     candidate_proposals: list[dict],
     patch_validation_results: list[dict],
     provider_weights: dict[str, float] | None = None,
+    scoring_provider_id: str = "unknown",
+    author_provider_id: str = "unknown",
 ) -> tuple[str, bool]:
     template = Path("prompts/score_prompt.md").read_text(encoding="utf-8")
     rendered = template.format(
@@ -22,5 +24,7 @@ def render_score_prompt(
         patch_validation_results_json=json.dumps(patch_validation_results, indent=2),
         provider_weights_json=json.dumps(provider_weights or {}, indent=2),
         score_result_schema=json.dumps(SCORE_RESULT_SCHEMA, indent=2),
+        scoring_provider_id=scoring_provider_id,
+        author_provider_id=author_provider_id,
     )
     return rendered, len(rendered) > PROMPT_SIZE_WARNING_LIMIT

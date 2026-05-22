@@ -50,3 +50,7 @@ class PatchValidationError(ModelCommitteeError):
 
 class SelectionError(ModelCommitteeError):
     pass
+
+
+class HumanReviewRequired(ModelCommitteeError):
+    pass
