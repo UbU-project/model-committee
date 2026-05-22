@@ -117,10 +117,11 @@ class ScoreMatrixRow(BaseModel):
     score: int | None = Field(default=None, ge=0, le=100)
     valid: bool
     rationale: str
+    implements_selected_work: bool = True
+    avoids_unnecessary_scope: bool = True
     required_fixes: list[str]
     risks: list[str]
     schema_validation: SchemaValidationStatus
-    diagnostic_self_score: bool = False
 
 
 class DisagreementFlag(BaseModel):

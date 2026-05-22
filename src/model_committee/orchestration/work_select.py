@@ -7,7 +7,7 @@ from model_committee.responses.schemas import ScoreMatrixRow, WorkProposal
 from model_committee.runs.manifest import RunStatus, load_manifest, write_manifest
 from model_committee.runs.review import write_review
 
-from .quorum import evaluate_quorum
+from .quorum import evaluate_quorum  # fallback when manifest has no stored quorum
 
 COMMIT_MESSAGE_PREFIX = "UMC: "
 
@@ -34,11 +34,16 @@ def run_work_select(run_dir: Path) -> None:
         )
     }
     score_matrix = _load_score_matrix(run_dir, manifest)
-    aggregates, disagreement_flags, quorum = evaluate_quorum(
-        proposals=proposals,
-        validations=validations,
-        score_matrix=score_matrix,
-    )
+    if manifest.quorum_result is not None and manifest.score_aggregates:
+        quorum = manifest.quorum_result
+        aggregates = manifest.score_aggregates
+        disagreement_flags = manifest.disagreement_flags
+    else:
+        aggregates, disagreement_flags, quorum = evaluate_quorum(
+            proposals=proposals,
+            validations=validations,
+            score_matrix=score_matrix,
+        )
     selected_id = quorum.selected_proposal_id
     manifest.score_matrix = score_matrix
     manifest.score_aggregates = aggregates

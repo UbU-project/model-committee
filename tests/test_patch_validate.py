@@ -207,7 +207,6 @@ def test_work_select_uses_normalized_patch(git_fixture_repo, tmp_path):
             "required_fixes": [],
             "risks": [],
             "schema_validation": {"valid": True},
-            "diagnostic_self_score": False,
         }
     ]
     (run_dir / "parsed" / "score_matrix.json").write_text(

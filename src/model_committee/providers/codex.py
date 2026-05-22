@@ -108,6 +108,9 @@ class CodexProvider:
                 response_path=str(output_path),
             ) from exc
 
+    def response_path(self, run_dir: Path, prompt_path: Path) -> Path:
+        return run_dir / "responses" / f"{prompt_path.stem}_response.json"
+
     def score_work_proposals(
         self, run_dir: Path, prompt_path: Path, schema_path: Path
     ) -> ScoreResult:

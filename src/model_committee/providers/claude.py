@@ -93,47 +93,20 @@ class ClaudeCodeProvider:
                 response_path=str(stdout_path),
             )
 
-        try:
-            raw = json.loads(result.stdout)
-        except json.JSONDecodeError as exc:
-            metadata["schema_validation"] = {
-                "valid": False,
-                "message": f"claude stdout is not valid JSON: {exc}",
-            }
+        structured = parse_structured_output(result.stdout)
+        if structured is None:
+            try:
+                json.loads(result.stdout)
+                message = "claude output missing or invalid structured_output"
+            except json.JSONDecodeError as exc:
+                message = f"claude stdout is not valid JSON: {exc}"
+            metadata["schema_validation"] = {"valid": False, "message": message}
             _write_metadata(metadata_path, metadata)
             raise ModelOutputError(
-                f"claude stdout is not valid JSON: {exc}",
-                stderr_path=str(stderr_path),
-                response_path=str(stdout_path),
-            ) from exc
-
-        if not isinstance(raw, dict) or "structured_output" not in raw:
-            metadata["schema_validation"] = {
-                "valid": False,
-                "message": "claude output missing structured_output",
-            }
-            _write_metadata(metadata_path, metadata)
-            raise ModelOutputError(
-                "claude output missing structured_output",
+                message,
                 stderr_path=str(stderr_path),
                 response_path=str(stdout_path),
             )
-
-        structured = raw["structured_output"]
-        if isinstance(structured, str):
-            try:
-                structured = json.loads(structured)
-            except json.JSONDecodeError as exc:
-                metadata["schema_validation"] = {
-                    "valid": False,
-                    "message": f"structured_output string is not valid JSON: {exc}",
-                }
-                _write_metadata(metadata_path, metadata)
-                raise ModelOutputError(
-                    f"claude structured_output is not valid JSON: {exc}",
-                    stderr_path=str(stderr_path),
-                    response_path=str(stdout_path),
-                ) from exc
         structured_path.write_text(json.dumps(structured, indent=2) + "\n", encoding="utf-8")
 
         try:
@@ -177,27 +150,18 @@ class ClaudeCodeProvider:
             artifact_stem=artifact_stem,
         )
 
+    def response_path(self, run_dir: Path, prompt_path: Path) -> Path:
+        return run_dir / "responses" / f"{prompt_path.stem}_stdout.json"
+
 
 def build_claude_argv(config: ClaudeConfig, prompt: str, schema_json: str) -> list[str]:
     args = [config.command]
     if config.bare:
         args.append("--bare")
-    args.extend(
-        [
-            "--print",
-            prompt,
-            "--output-format",
-            "json",
-            "--json-schema",
-            schema_json,
-            "--tools",
-            config.tools,
-            "--model",
-            config.model,
-            "--max-turns",
-            str(config.max_turns),
-        ]
-    )
+    args.extend(["--print", prompt, "--output-format", "json", "--json-schema", schema_json])
+    if config.tools:
+        args.extend(["--tools", config.tools])
+    args.extend(["--model", config.model, "--max-turns", str(config.max_turns)])
     if config.max_budget_usd is not None:
         args.extend(["--max-budget-usd", str(config.max_budget_usd)])
     return args
@@ -226,6 +190,27 @@ def claude_version_at_least(found: str, minimum: str) -> bool:
     if found_parts is None or minimum_parts is None:
         return False
     return found_parts >= minimum_parts
+
+
+def parse_structured_output(stdout: str) -> dict | None:
+    """Extract the structured_output dict from a claude --output-format json response.
+
+    Returns None if stdout is not valid JSON, the envelope is missing structured_output,
+    or structured_output itself is not a dict (after optional string-JSON unwrapping).
+    """
+    try:
+        raw = json.loads(stdout)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(raw, dict) or "structured_output" not in raw:
+        return None
+    structured = raw["structured_output"]
+    if isinstance(structured, str):
+        try:
+            structured = json.loads(structured)
+        except json.JSONDecodeError:
+            return None
+    return structured if isinstance(structured, dict) else None
 
 
 def _write_metadata(path: Path, metadata: dict) -> None:

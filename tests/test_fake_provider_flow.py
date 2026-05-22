@@ -5,6 +5,7 @@ from model_committee.cli import main
 from model_committee.config import ModelCommitteeConfig
 from model_committee.errors import ProviderError
 from model_committee.orchestration import work_generate
+from model_committee.providers.fake import _candidate_proposals_from_prompt
 from model_committee.responses.schemas import WorkProposal
 
 
@@ -125,3 +126,28 @@ def test_secondary_provider_failure_is_logged_without_aborting(
     assert failure["failure_class"] == "ProviderError"
     assert failure["timeout_seconds"] == 17
     assert failure["quorum_met"] is True
+
+
+def test_candidate_proposals_from_prompt_parses_score_prompt_format():
+    proposals = [
+        {"proposal_id": "codex-work-001", "provider_id": "codex"},
+        {"proposal_id": "claude-work-001", "provider_id": "claude"},
+    ]
+    prompt = (
+        "## Some header\n\nsome text\n\n"
+        "## Candidate proposals\n\n"
+        "```json\n"
+        + json.dumps(proposals, indent=2)
+        + "\n```\n\nmore text"
+    )
+    result = _candidate_proposals_from_prompt(prompt)
+    assert result == proposals
+
+
+def test_candidate_proposals_from_prompt_returns_empty_when_section_missing():
+    assert _candidate_proposals_from_prompt("no candidate proposals section here") == []
+
+
+def test_candidate_proposals_from_prompt_returns_empty_on_wrong_fence_label():
+    prompt = "## Candidate proposals\n\n```python\n[]\n```"
+    assert _candidate_proposals_from_prompt(prompt) == []

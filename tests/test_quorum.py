@@ -41,7 +41,6 @@ def _row(
     author: str,
     scorer: str,
     score: int,
-    self_score: bool = False,
 ) -> ScoreMatrixRow:
     return ScoreMatrixRow(
         proposal_id=proposal_id,
@@ -53,7 +52,6 @@ def _row(
         required_fixes=[],
         risks=[],
         schema_validation=SchemaValidationStatus(valid=True),
-        diagnostic_self_score=self_score,
     )
 
 
@@ -63,7 +61,7 @@ def test_cross_scoring_excludes_self_score_from_quorum():
         proposals={proposal.proposal_id: proposal},
         validations={proposal.proposal_id: _validation(proposal.proposal_id)},
         score_matrix=[
-            _row("codex-work-001", "codex", "codex", 100, self_score=True),
+            _row("codex-work-001", "codex", "codex", 100),
         ],
     )
     assert aggregates[0].cross_score_count == 0

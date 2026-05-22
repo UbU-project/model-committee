@@ -22,6 +22,9 @@ class FakeCodexProvider:
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
         return WorkProposal.model_validate_json(dst.read_text(encoding="utf-8"))
 
+    def response_path(self, run_dir: Path, prompt_path: Path) -> Path:
+        return run_dir / "responses" / f"{prompt_path.stem}_response.json"
+
     def score_work_proposals(
         self, run_dir: Path, prompt_path: Path, schema_path: Path
     ) -> ScoreResult:
@@ -39,24 +42,14 @@ class FakeClaudeCodeProvider:
         self, run_dir: Path, prompt_path: Path, schema_path: Path
     ) -> WorkProposal:
         del prompt_path, schema_path
-        data = json.loads(
-            (self.fixture_dir / "codex_work_response.valid.json").read_text(encoding="utf-8")
-        )
-        data.update(
-            {
-                "proposal_id": "claude-work-001",
-                "provider_id": self.provider_id,
-                "model_name": "claude:sonnet",
-                "summary": "Update the example design line using the Claude fixture.",
-                "rationale": "A second frontier-provider fixture proposal.",
-                "patch": data["patch"].replace("+Selected design line.", "+Claude design line."),
-                "commit_message": "Update design line from Claude",
-            }
-        )
+        src = self.fixture_dir / "claude_work_response.valid.json"
         dst = run_dir / "responses" / "claude_work_response.json"
         dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        return WorkProposal.model_validate(data)
+        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        return WorkProposal.model_validate_json(dst.read_text(encoding="utf-8"))
+
+    def response_path(self, run_dir: Path, prompt_path: Path) -> Path:
+        return run_dir / "responses" / f"{prompt_path.stem}_stdout.json"
 
     def score_work_proposals(
         self, run_dir: Path, prompt_path: Path, schema_path: Path

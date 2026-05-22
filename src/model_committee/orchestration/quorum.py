@@ -31,7 +31,6 @@ def evaluate_quorum(
             and row.score is not None
             and row.proposal_id in valid_work_proposal_ids
             and row.scorer_provider != row.author_provider
-            and not row.diagnostic_self_score
         ):
             evidence_by_proposal[row.proposal_id].append(row)
 

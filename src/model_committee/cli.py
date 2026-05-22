@@ -36,7 +36,11 @@ from model_committee.orchestration.run_loop import run_loop
 from model_committee.orchestration.work_generate import run_work_generate
 from model_committee.orchestration.work_score import run_work_score
 from model_committee.orchestration.work_select import run_work_select
-from model_committee.providers.claude import build_claude_argv, claude_version_at_least
+from model_committee.providers.claude import (
+    build_claude_argv,
+    claude_version_at_least,
+    parse_structured_output,
+)
 from model_committee.providers.ollama import check_ollama_reachable, list_ollama_models
 
 
@@ -251,12 +255,8 @@ def _doctor_claude_smoke_test(claude_config, repo: Path) -> bool:
     if result.returncode != 0:
         print("FAIL claude schema-native smoke test failed")
         return False
-    try:
-        data = json.loads(result.stdout)
-    except json.JSONDecodeError:
-        print("FAIL claude schema-native smoke test returned non-JSON")
-        return False
-    if data.get("structured_output", {}).get("ok") is True:
+    structured = parse_structured_output(result.stdout)
+    if structured is not None and structured.get("ok") is True:
         print("OK claude schema-native smoke test")
         return True
     print("FAIL claude schema-native smoke test missing structured_output.ok")

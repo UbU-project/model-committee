@@ -42,15 +42,21 @@ def test_claude_provider_argv_construction():
         "json",
         "--json-schema",
         '{"type":"object"}',
-        "--tools",
-        "",
         "--model",
         "sonnet",
         "--max-turns",
         "1",
     ]
+    assert "--tools" not in argv
     assert "--allowedTools" not in argv
     assert "--allowed-tools" not in argv
+
+
+def test_claude_provider_argv_includes_tools_when_set():
+    config = ClaudeConfig(command="claude", model="sonnet", tools="Bash")
+    argv = build_claude_argv(config, "prompt", '{"type":"object"}')
+    assert "--tools" in argv
+    assert argv[argv.index("--tools") + 1] == "Bash"
 
 
 def test_claude_provider_parses_structured_output(monkeypatch, tmp_path):

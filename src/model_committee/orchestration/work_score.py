@@ -84,7 +84,7 @@ def run_work_score(run_dir: Path, config: ModelCommitteeConfig, fake_providers: 
                 phase="work-score",
                 target_proposal_id=proposal.proposal_id,
                 response_path=str(
-                    _expected_response_path(run_dir, provider.provider_id, prompt_path)
+                    provider.response_path(run_dir, prompt_path)
                 ),
             )
             try:
@@ -105,12 +105,14 @@ def run_work_score(run_dir: Path, config: ModelCommitteeConfig, fake_providers: 
                         score=score.score,
                         valid=True,
                         rationale=score.rationale,
+                        implements_selected_work=score.implements_selected_work,
+                        avoids_unnecessary_scope=score.avoids_unnecessary_scope,
                         required_fixes=score.required_fixes,
                         risks=score.risks,
                         schema_validation=SchemaValidationStatus(
                             valid=True,
                             response_path=str(
-                                _expected_response_path(run_dir, provider.provider_id, prompt_path)
+                                provider.response_path(run_dir, prompt_path)
                             ),
                         ),
                     )
@@ -122,7 +124,7 @@ def run_work_score(run_dir: Path, config: ModelCommitteeConfig, fake_providers: 
                     phase="work-score",
                     target_proposal_id=proposal.proposal_id,
                     response_path=str(
-                        _expected_response_path(run_dir, provider.provider_id, prompt_path)
+                        provider.response_path(run_dir, prompt_path)
                     ),
                     parsed_path=str(parsed_path),
                 )
@@ -227,13 +229,9 @@ def _score_for_proposal(score_result: ScoreResult, proposal_id: str) -> Proposal
     raise ModelOutputError(f"score result missing proposal_id {proposal_id}")
 
 
-def _expected_response_path(run_dir: Path, provider_id: str, prompt_path: Path) -> Path:
-    if provider_id == "claude":
-        return run_dir / "responses" / f"{prompt_path.stem}_stdout.json"
-    return run_dir / "responses" / f"{prompt_path.stem}_response.json"
-
-
 def _safe_artifact_name(value: str) -> str:
+    # Two distinct provider IDs could theoretically map to the same safe name,
+    # but this is acceptable for the current provider set (codex, claude, ollama:*).
     safe = value.lower().replace("/", "__").replace(":", "--").replace(" ", "_")
     return re.sub(r"[^a-z0-9_.-]", "", safe)
 
@@ -252,6 +250,7 @@ def _write_aggregate_score_result(
     for aggregate in aggregates:
         validation = validations[aggregate.proposal_id]
         rows = [row for row in score_matrix if row.proposal_id == aggregate.proposal_id]
+        valid_rows = [row for row in rows if row.valid]
         risks = sorted({risk for row in rows for risk in row.risks})
         required_fixes = sorted({fix for row in rows for fix in row.required_fixes})
         scores.append(
@@ -259,9 +258,17 @@ def _write_aggregate_score_result(
                 proposal_id=aggregate.proposal_id,
                 score=int(round(aggregate.score_mean or 0)),
                 patch_applies=validation.patch_applies,
-                implements_selected_work=True,
+                implements_selected_work=all(
+                    row.implements_selected_work for row in valid_rows
+                )
+                if valid_rows
+                else True,
                 preserves_question_schema=not proposals[aggregate.proposal_id].validation_notes,
-                avoids_unnecessary_scope=True,
+                avoids_unnecessary_scope=all(
+                    row.avoids_unnecessary_scope for row in valid_rows
+                )
+                if valid_rows
+                else True,
                 decomposition_quality="not_applicable",
                 risks=risks,
                 required_fixes=required_fixes,
