@@ -42,12 +42,13 @@ def test_claude_provider_argv_construction():
         "json",
         "--json-schema",
         '{"type":"object"}',
+        "--tools",
+        "",
         "--model",
         "sonnet",
         "--max-turns",
         "1",
     ]
-    assert "--tools" not in argv
     assert "--allowedTools" not in argv
     assert "--allowed-tools" not in argv
 

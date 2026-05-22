@@ -83,9 +83,7 @@ def run_work_score(run_dir: Path, config: ModelCommitteeConfig, fake_providers: 
                 model_name=_provider_model_name(provider),
                 phase="work-score",
                 target_proposal_id=proposal.proposal_id,
-                response_path=str(
-                    provider.response_path(run_dir, prompt_path)
-                ),
+                response_path=str(provider.response_path(run_dir, prompt_path)),
             )
             try:
                 score_result = provider.score_work_proposals(
@@ -111,9 +109,7 @@ def run_work_score(run_dir: Path, config: ModelCommitteeConfig, fake_providers: 
                         risks=score.risks,
                         schema_validation=SchemaValidationStatus(
                             valid=True,
-                            response_path=str(
-                                provider.response_path(run_dir, prompt_path)
-                            ),
+                            response_path=str(provider.response_path(run_dir, prompt_path)),
                         ),
                     )
                 )
@@ -123,9 +119,7 @@ def run_work_score(run_dir: Path, config: ModelCommitteeConfig, fake_providers: 
                     model_name=_provider_model_name(provider),
                     phase="work-score",
                     target_proposal_id=proposal.proposal_id,
-                    response_path=str(
-                        provider.response_path(run_dir, prompt_path)
-                    ),
+                    response_path=str(provider.response_path(run_dir, prompt_path)),
                     parsed_path=str(parsed_path),
                 )
             except (ProviderError, ModelOutputError, ValueError, OSError) as exc:
@@ -258,15 +252,11 @@ def _write_aggregate_score_result(
                 proposal_id=aggregate.proposal_id,
                 score=int(round(aggregate.score_mean or 0)),
                 patch_applies=validation.patch_applies,
-                implements_selected_work=all(
-                    row.implements_selected_work for row in valid_rows
-                )
+                implements_selected_work=all(row.implements_selected_work for row in valid_rows)
                 if valid_rows
                 else True,
                 preserves_question_schema=not proposals[aggregate.proposal_id].validation_notes,
-                avoids_unnecessary_scope=all(
-                    row.avoids_unnecessary_scope for row in valid_rows
-                )
+                avoids_unnecessary_scope=all(row.avoids_unnecessary_scope for row in valid_rows)
                 if valid_rows
                 else True,
                 decomposition_quality="not_applicable",

@@ -49,7 +49,7 @@ class FakeClaudeCodeProvider:
         return WorkProposal.model_validate_json(dst.read_text(encoding="utf-8"))
 
     def response_path(self, run_dir: Path, prompt_path: Path) -> Path:
-        return run_dir / "responses" / f"{prompt_path.stem}_stdout.json"
+        return run_dir / "responses" / f"{prompt_path.stem}_response.json"
 
     def score_work_proposals(
         self, run_dir: Path, prompt_path: Path, schema_path: Path

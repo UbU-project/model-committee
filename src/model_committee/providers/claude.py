@@ -158,9 +158,18 @@ def build_claude_argv(config: ClaudeConfig, prompt: str, schema_json: str) -> li
     args = [config.command]
     if config.bare:
         args.append("--bare")
-    args.extend(["--print", prompt, "--output-format", "json", "--json-schema", schema_json])
-    if config.tools:
-        args.extend(["--tools", config.tools])
+    args.extend(
+        [
+            "--print",
+            prompt,
+            "--output-format",
+            "json",
+            "--json-schema",
+            schema_json,
+            "--tools",
+            config.tools,
+        ]
+    )
     args.extend(["--model", config.model, "--max-turns", str(config.max_turns)])
     if config.max_budget_usd is not None:
         args.extend(["--max-budget-usd", str(config.max_budget_usd)])

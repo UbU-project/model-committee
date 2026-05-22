@@ -39,6 +39,13 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     assert manifest["cross_score_count"] >= 1
     assert manifest["quorum_result"]["valid"] is True
     assert manifest["artifact_publication_status"] == "operator_pending"
+    for success in manifest["provider_successes"]:
+        if success["response_path"]:
+            assert Path(success["response_path"]).exists()
+    for row in manifest["score_matrix"]:
+        response_path = row["schema_validation"]["response_path"]
+        if response_path:
+            assert Path(response_path).exists()
     assert (run_dir / "patches" / "selected.patch").exists()
     commit_message = (run_dir / "commit_message.txt").read_text(encoding="utf-8")
     assert commit_message.startswith("UMC: ")
@@ -136,9 +143,7 @@ def test_candidate_proposals_from_prompt_parses_score_prompt_format():
     prompt = (
         "## Some header\n\nsome text\n\n"
         "## Candidate proposals\n\n"
-        "```json\n"
-        + json.dumps(proposals, indent=2)
-        + "\n```\n\nmore text"
+        "```json\n" + json.dumps(proposals, indent=2) + "\n```\n\nmore text"
     )
     result = _candidate_proposals_from_prompt(prompt)
     assert result == proposals
