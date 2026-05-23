@@ -17,8 +17,8 @@
     "timeout_seconds": 3600,
     "weight": 1.0,
     "tools": "",
-    "max_turns": 1,
-    "bare": true,
+    "max_turns": 5,
+    "bare": false,
     "minimum_version": "2.1.146",
     "doctor_smoke_test": false,
     "max_budget_usd": null
@@ -51,19 +51,6 @@
         "repeat_penalty": 1.1,
         "num_predict": 4096,
         "notes": "Large local coding proposal model; may be slow/heavy"
-      },
-      {
-        "name": "vaultbox/qwen3.5-uncensored:27b",
-        "enabled": true,
-        "priority": 3,
-        "weight": 0.25,
-        "max_context_tokens": 32768,
-        "timeout_seconds": 3600,
-        "temperature": 0.2,
-        "top_p": 0.9,
-        "repeat_penalty": 1.1,
-        "num_predict": 4096,
-        "notes": "Large local alternate reasoning/model-diversity proposal model; may be slow/heavy"
       }
     ]
   }

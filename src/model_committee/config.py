@@ -27,7 +27,7 @@ class ClaudeConfig(BaseModel):
     timeout_seconds: int = 3600
     weight: float = 1.0
     tools: str = ""
-    max_turns: int = 1
+    max_turns: int = 3
     bare: bool = True
     minimum_version: str = "2.1.146"
     doctor_smoke_test: bool = False

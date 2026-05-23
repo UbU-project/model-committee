@@ -17,8 +17,8 @@
     "timeout_seconds": 3600,
     "weight": 1.0,
     "tools": "",
-    "max_turns": 1,
-    "bare": true,
+    "max_turns": 5,
+    "bare": false,
     "minimum_version": "2.1.146",
     "doctor_smoke_test": false,
     "max_budget_usd": null

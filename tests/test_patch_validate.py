@@ -1,9 +1,16 @@
 import json
 import subprocess
 
+import pytest
+
 from model_committee.orchestration.work_select import run_work_select
 from model_committee.patches.extract import enforce_allowed_patch_files
-from model_committee.patches.validate import RECOUNT_NORMALIZATION_WARNING, validate_patch
+from model_committee.patches.validate import (
+    POSIX_NORMALIZATION_WARNING,
+    RECOUNT_NORMALIZATION_WARNING,
+    validate_patch,
+)
+from model_committee.responses.schemas import WorkProposal
 from model_committee.runs.manifest import RunManifest, RunStatus, write_manifest
 
 
@@ -29,6 +36,16 @@ index d2a4c9f..19eb29d 100644
 -Original design line.
 +Selected design line.
  
+"""
+
+POSIX_UNIFIED_PATCH = """--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -1,4 +1,4 @@
+ # Design
+
+-Original design line.
++Selected design line.
+
 """
 
 BAD_CONTEXT_PATCH = """diff --git a/DESIGN.md b/DESIGN.md
@@ -131,6 +148,71 @@ def test_patch_validation_invalid_when_ordinary_and_recount_fail(git_fixture_rep
     assert result.error is not None
     assert "ordinary git apply --check failed" in result.error
     assert "git apply --check --recount failed" in result.error
+
+
+def test_work_proposal_schema_accepts_posix_unified_diff():
+    proposal = WorkProposal.model_validate(
+        {
+            "proposal_id": "claude-posix-001",
+            "provider_id": "claude",
+            "model_name": "claude:sonnet",
+            "question_id": "UBU-Q0001",
+            "base_commit": "abc123",
+            "summary": "Update design line.",
+            "rationale": "Minimal change.",
+            "changed_files": ["DESIGN.md"],
+            "patch": POSIX_UNIFIED_PATCH,
+            "commit_message": "Update design line",
+            "validation_notes": [],
+            "new_questions_added": [],
+            "questions_resolved": [],
+            "decisions_added": [],
+            "requires_human_review": False,
+        }
+    )
+    assert "--- a/DESIGN.md" in proposal.patch
+
+
+def test_work_proposal_schema_rejects_patch_with_no_diff_header():
+    with pytest.raises(Exception, match="diff --git or --- a/"):
+        WorkProposal.model_validate(
+            {
+                "proposal_id": "claude-bad-001",
+                "provider_id": "claude",
+                "model_name": "claude:sonnet",
+                "question_id": "UBU-Q0001",
+                "base_commit": "abc123",
+                "summary": "Update design line.",
+                "rationale": "Minimal change.",
+                "changed_files": ["DESIGN.md"],
+                "patch": "not a patch",
+                "commit_message": "Update design line",
+                "validation_notes": [],
+                "new_questions_added": [],
+                "questions_resolved": [],
+                "decisions_added": [],
+                "requires_human_review": False,
+            }
+        )
+
+
+def test_patch_validation_normalizes_posix_unified_diff(git_fixture_repo, tmp_path):
+    result = validate_patch(git_fixture_repo, "proposal", POSIX_UNIFIED_PATCH)
+
+    assert result.patch_applies is True
+    assert result.allowlist_passed is True
+    assert result.normalized_patch is not None
+    assert "diff --git" in result.normalized_patch
+    assert result.changed_files == ["DESIGN.md"]
+    assert POSIX_NORMALIZATION_WARNING in result.warnings
+
+    normalized_path = tmp_path / "normalized.patch"
+    normalized_path.write_text(result.normalized_patch, encoding="utf-8")
+    check = subprocess.run(
+        ["git", "-C", str(git_fixture_repo), "apply", "--check", str(normalized_path)],
+        capture_output=True,
+    )
+    assert check.returncode == 0
 
 
 def test_work_select_uses_normalized_patch(git_fixture_repo, tmp_path):

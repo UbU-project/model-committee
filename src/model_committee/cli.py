@@ -238,10 +238,12 @@ def _doctor_claude_smoke_test(claude_config, repo: Path) -> bool:
             "properties": {"ok": {"type": "boolean"}},
         }
     )
-    args = build_claude_argv(claude_config, 'Return {"ok": true}.', schema)
+    smoke_prompt = 'Return {"ok": true}.'
+    args = build_claude_argv(claude_config, schema)
     try:
         result = subprocess.run(
             args,
+            input=smoke_prompt,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

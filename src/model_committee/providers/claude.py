@@ -28,6 +28,7 @@ class ClaudeCodeProvider:
         schema_path: Path,
         output_model: type[T],
         artifact_stem: str,
+        cwd: Path | None = None,
     ) -> T:
         response_dir = run_dir / "responses"
         stdout_path = response_dir / f"{artifact_stem}_stdout.json"
@@ -38,7 +39,7 @@ class ClaudeCodeProvider:
 
         prompt = prompt_path.read_text(encoding="utf-8")
         schema_json = schema_path.read_text(encoding="utf-8")
-        args = build_claude_argv(self.config, prompt, schema_json)
+        args = build_claude_argv(self.config, schema_json)
         metadata = {
             "provider_name": self.provider_id,
             "model_name": self.config.model,
@@ -54,12 +55,13 @@ class ClaudeCodeProvider:
         try:
             result = subprocess.run(
                 args,
+                input=prompt,
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=self.config.timeout_seconds,
                 check=False,
-                cwd=self.repo_path,
+                cwd=cwd,
             )
         except subprocess.TimeoutExpired as exc:
             stdout_path.write_text(exc.stdout or "", encoding="utf-8")
@@ -136,6 +138,7 @@ class ClaudeCodeProvider:
             schema_path=schema_path,
             output_model=WorkProposal,
             artifact_stem="claude_work",
+            cwd=self.repo_path,
         )
 
     def score_work_proposals(
@@ -154,14 +157,14 @@ class ClaudeCodeProvider:
         return run_dir / "responses" / f"{prompt_path.stem}_stdout.json"
 
 
-def build_claude_argv(config: ClaudeConfig, prompt: str, schema_json: str) -> list[str]:
+def build_claude_argv(config: ClaudeConfig, schema_json: str) -> list[str]:
     args = [config.command]
     if config.bare:
         args.append("--bare")
     args.extend(
         [
             "--print",
-            prompt,
+            "-",
             "--output-format",
             "json",
             "--json-schema",
@@ -178,11 +181,10 @@ def build_claude_argv(config: ClaudeConfig, prompt: str, schema_json: str) -> li
 
 def redact_claude_argv(args: list[str]) -> list[str]:
     redacted = list(args)
-    for flag in ("--print", "--json-schema"):
-        try:
-            redacted[redacted.index(flag) + 1] = f"<{flag.removeprefix('--')}>"
-        except (ValueError, IndexError):
-            pass
+    try:
+        redacted[redacted.index("--json-schema") + 1] = "<json-schema>"
+    except (ValueError, IndexError):
+        pass
     return redacted
 
 

@@ -58,8 +58,8 @@ class WorkProposal(BaseModel):
     def validate_patch(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("patch must be non-empty")
-        if "diff --git" not in value:
-            raise ValueError("patch must contain at least one diff --git header")
+        if "diff --git" not in value and "--- a/" not in value:
+            raise ValueError("patch must contain at least one diff --git or --- a/ header")
         return value
 
     @field_validator("commit_message")

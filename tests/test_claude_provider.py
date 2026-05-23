@@ -32,12 +32,12 @@ def _valid_work_payload() -> dict:
 
 def test_claude_provider_argv_construction():
     config = ClaudeConfig(command="claude", model="sonnet")
-    argv = build_claude_argv(config, "prompt", '{"type":"object"}')
+    argv = build_claude_argv(config, '{"type":"object"}')
     assert argv == [
         "claude",
         "--bare",
         "--print",
-        "prompt",
+        "-",
         "--output-format",
         "json",
         "--json-schema",
@@ -47,7 +47,7 @@ def test_claude_provider_argv_construction():
         "--model",
         "sonnet",
         "--max-turns",
-        "1",
+        "3",
     ]
     assert "--allowedTools" not in argv
     assert "--allowed-tools" not in argv
@@ -55,7 +55,7 @@ def test_claude_provider_argv_construction():
 
 def test_claude_provider_argv_includes_tools_when_set():
     config = ClaudeConfig(command="claude", model="sonnet", tools="Bash")
-    argv = build_claude_argv(config, "prompt", '{"type":"object"}')
+    argv = build_claude_argv(config, '{"type":"object"}')
     assert "--tools" in argv
     assert argv[argv.index("--tools") + 1] == "Bash"
 
