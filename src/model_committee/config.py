@@ -22,6 +22,7 @@ class CodexConfig(BaseModel):
 
 class ClaudeConfig(BaseModel):
     enabled: bool = True
+    score_only: bool = False
     command: str = "claude"
     model: str = "sonnet"
     timeout_seconds: int = 3600

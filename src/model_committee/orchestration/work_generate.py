@@ -82,7 +82,7 @@ def run_work_generate(
     else:
         if config.codex.enabled:
             providers.append(CodexProvider(config.codex, repo))
-        if config.claude.enabled:
+        if config.claude.enabled and not config.claude.score_only:
             providers.append(ClaudeCodeProvider(config.claude, repo))
         for model in sorted(
             [model for model in config.ollama.models if model.enabled],

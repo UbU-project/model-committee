@@ -12,6 +12,7 @@
   },
   "claude": {
     "enabled": true,
+    "score_only": true,
     "command": "claude",
     "model": "sonnet",
     "timeout_seconds": 3600,
