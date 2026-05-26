@@ -2,7 +2,7 @@
 
 Bootstrap model committee automation for the UbU project.
 
-This repository implements the narrow v0.2 contract in `IMPLEMENTATION_CONTRACT.md`.
+This repository implements the narrow v0.3 contract in `IMPLEMENTATION_CONTRACT.md`.
 
 Status: active pre-MVP dogfooding bootstrap for the canonical `ubu-design` repo.
 
