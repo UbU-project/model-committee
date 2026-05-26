@@ -13,8 +13,9 @@ def run_loop(
     config_path: Path | None,
     runs_dir: Path,
     fake_providers: bool = False,
+    phase_filter: str | None = None,
 ) -> Path:
-    ranking = run_rank(repo)
+    ranking = run_rank(repo, phase_filter=phase_filter)
     if not ranking.selected_question_id:
         raise RuntimeError("no eligible question")
     run_dir = run_work_generate(

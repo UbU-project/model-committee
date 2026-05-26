@@ -1,4 +1,4 @@
-# model-committee v0.2 Implementation Contract
+# model-committee v0.3 Implementation Contract
 
 Status: Accepted implementation contract  
 Project: `model-committee`  
@@ -20,23 +20,22 @@ exists only when a human operator commits to the canonical design repository.
 
 ---
 
-## 2. v0.2 Scope
+## 2. v0.3 Scope
 
-`model-committee v0.2` must implement the v0.1 local/testable workflow plus:
+`model-committee v0.3` must implement the v0.2 workflow plus:
 
-- Claude Code CLI as a second frontier provider for work proposal generation;
-- Claude Code CLI as a schema-native scoring provider;
-- Codex and Claude Code cross-scoring;
-- explicit score matrix artifacts;
-- quorum policy based only on valid cross-scores from different frontier providers;
-- disagreement flags in `review.md` and `manifest.json`;
-- manifest fields for provider attempts, provider successes, score matrix,
-  cross-score counts, score aggregates, disagreement flags, quorum result, and
-  artifact-publication status;
-- Claude Code doctor checks;
-- operator-run artifact publication commands in generated `review.md`.
+- `PLANNING_KERNEL_CONTRACT.md` as a fourth canonical source file: read by all
+  work providers, injected into prompts, snapshotted in runs, and patchable;
+- `rank` writes `Answerability score:` and `Last scored:` back to `OPEN_QUESTIONS.md`
+  in the live repo after each ranking; `Scored from commit:` is not updated;
+- `work-generate` prompts models to tombstone solved questions, remove duplicate
+  information across source files, and compress content to effective minimum;
+- prompt-size warning: `manifest.prompt_size_warning = True` when rendered prompt
+  is `>= 90% of PROMPT_SIZE_WARNING_LIMIT`; warning section emitted in `review.md`;
+- manifest `schema_version` bumped to `"0.3"`;
+- `PLANNING_KERNEL_CONTRACT.md` added to patch allowlist.
 
-Ollama remains a local work-proposal provider and does not score in v0.2.
+Ollama remains a local work-proposal provider and does not score in v0.3.
 
 Fake provider mode must remain deterministic and must not call Codex, Claude, or
 Ollama.
@@ -366,6 +365,7 @@ runs/<run-id>/
 - `automated_selection_valid`
 - `human_review_required`
 - `artifact_publication_status`
+- `prompt_size_warning`
 
 `artifact_publication_status` is `operator_pending` after `review.md` is
 written. `model-committee` must not automatically copy, commit, or push
@@ -434,6 +434,7 @@ Allowed changed files:
 DESIGN.md
 DECISIONS.md
 OPEN_QUESTIONS.md
+PLANNING_KERNEL_CONTRACT.md
 ```
 
 Forbidden:

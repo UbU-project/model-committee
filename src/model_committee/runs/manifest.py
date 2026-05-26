@@ -55,7 +55,7 @@ class ProviderSuccessEvent(BaseModel):
 
 
 class RunManifest(BaseModel):
-    schema_version: str = "0.2"
+    schema_version: str = "0.3"
     run_id: str
     created_at_utc: str
     repo_path: str
@@ -83,6 +83,7 @@ class RunManifest(BaseModel):
     automated_selection_valid: bool = False
     human_review_required: bool = False
     artifact_publication_status: str = "not_applicable"
+    prompt_size_warning: bool = False
 
 
 def utc_now_text() -> str:

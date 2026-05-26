@@ -19,9 +19,11 @@ def _earlier_question_sort_key(question_id: str) -> int:
     return -int(question_id.removeprefix("UBU-Q"))
 
 
-def rank_questions(questions: list[Question]) -> RankingReport:
+def rank_questions(questions: list[Question], phase_filter: str | None = None) -> RankingReport:
     by_id = {question.question_id: question for question in questions}
     open_questions = [question for question in questions if question.metadata.status == "Open"]
+    if phase_filter is not None:
+        open_questions = [q for q in open_questions if q.metadata.phase == phase_filter]
     dependent_counts = _open_dependent_counts(open_questions)
     ranked_models = [
         RankedQuestion(
@@ -54,4 +56,9 @@ def rank_questions(questions: list[Question]) -> RankingReport:
     selected = next(
         (q.question_id for q in ranked if is_work_eligible(q.answerability_score)), None
     )
-    return RankingReport(status="ok", ranked_questions=ranked, selected_question_id=selected)
+    return RankingReport(
+        status="ok",
+        ranked_questions=ranked,
+        selected_question_id=selected,
+        phase_filter=phase_filter,
+    )

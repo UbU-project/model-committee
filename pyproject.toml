@@ -1,6 +1,6 @@
 [project]
 name = "model-committee"
-version = "0.2.0"
+version = "0.3.0"
 description = "Bootstrap model committee automation for the UbU project"
 license = "MPL-2.0"
 requires-python = ">=3.12"

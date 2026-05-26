@@ -25,6 +25,13 @@ Selected proposal: `{manifest.selected_proposal_id or "none"}`
 ## Disagreement Flags
 
 """
+    if manifest.prompt_size_warning:
+        text += """
+## Prompt Size Warning
+
+The rendered work prompt reached or exceeded 90% of the prompt size limit. Consider tombstoning solved questions and compressing source files before the next run.
+
+"""
     text += _format_flags(manifest)
     text += """
 ## Quorum Result

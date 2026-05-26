@@ -30,6 +30,7 @@ from model_committee.errors import (
     ProviderError,
     SelectionError,
 )
+from model_committee.markdown.questions_parser import PHASE_VALUES
 from model_committee.orchestration.check import run_check
 from model_committee.orchestration.rank import run_rank
 from model_committee.orchestration.run_loop import run_loop
@@ -57,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_common_repo(check)
     rank = sub.add_parser("rank")
     add_common_repo(rank)
+    rank.add_argument("--phase", choices=sorted(PHASE_VALUES), default=None)
     work_generate = sub.add_parser("work-generate")
     add_common_repo(work_generate)
     work_generate.add_argument("--question", required=True)
@@ -70,6 +72,7 @@ def build_parser() -> argparse.ArgumentParser:
     loop = sub.add_parser("run-loop")
     add_common_repo(loop)
     loop.add_argument("--fake-providers", action="store_true")
+    loop.add_argument("--phase", choices=sorted(PHASE_VALUES), default=None)
     doctor = sub.add_parser("doctor")
     add_common_repo(doctor)
     sub.add_parser("version")
@@ -279,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
             print(format_consistency_report(report), end="")
             return EXIT_CONSISTENCY_FAILURE if report.hard_failures else EXIT_SUCCESS
         if args.command == "rank":
-            ranking = run_rank(args.repo)
+            ranking = run_rank(args.repo, phase_filter=args.phase)
             print(json.dumps(ranking.model_dump(), indent=2) + "\n", end="")
             return EXIT_SUCCESS
         if args.command == "work-generate":
@@ -308,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.config,
                 args.runs_dir,
                 args.fake_providers,
+                phase_filter=args.phase,
             )
             print(run_dir.name)
             return EXIT_SUCCESS

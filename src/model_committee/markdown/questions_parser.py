@@ -136,3 +136,45 @@ def parse_questions_text(text: str) -> list[Question]:
 
 def parse_questions_file(path: Path) -> list[Question]:
     return parse_questions_text(Path(path).read_text(encoding="utf-8"))
+
+
+_ANSWERABILITY_SCORE_RE = re.compile(r"(Answerability score:)\s*\S+")
+_LAST_SCORED_RE = re.compile(r"(Last scored:)\s*\S+")
+
+
+def _update_metadata_line(line: str, *, answerability_score: int, last_scored: str) -> str:
+    line = _ANSWERABILITY_SCORE_RE.sub(rf"\g<1> {answerability_score}", line, count=1)
+    line = _LAST_SCORED_RE.sub(rf"\g<1> {last_scored}", line, count=1)
+    return line
+
+
+def update_question_scores(
+    text: str,
+    score_by_id: dict[str, int],
+    scored_date: str,
+) -> str:
+    """Update Answerability score and Last scored fields for open questions.
+
+    Only questions whose IDs appear in score_by_id are modified.
+    Scored from commit is intentionally left unchanged.
+    """
+    lines = text.splitlines(keepends=True)
+    pending_question_id: str | None = None
+    result: list[str] = []
+    for line in lines:
+        match = QUESTION_HEADING_RE.match(line.rstrip("\n\r"))
+        if match:
+            pending_question_id = match.group(1)
+            result.append(line)
+        elif pending_question_id is not None and line.strip():
+            if pending_question_id in score_by_id:
+                line = _update_metadata_line(
+                    line,
+                    answerability_score=score_by_id[pending_question_id],
+                    last_scored=scored_date,
+                )
+            pending_question_id = None
+            result.append(line)
+        else:
+            result.append(line)
+    return "".join(result)

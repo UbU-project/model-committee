@@ -187,3 +187,4 @@ class RankingReport(BaseModel):
     status: Literal["ok"]
     ranked_questions: list[RankedQuestion]
     selected_question_id: str | None
+    phase_filter: str | None = None

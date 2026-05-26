@@ -32,7 +32,7 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     assert main(["work-select", "--run", str(run_dir)]) == 0
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "selected"
-    assert manifest["schema_version"] == "0.2"
+    assert manifest["schema_version"] == "0.3"
     assert "provider_attempts" in manifest
     assert "provider_successes" in manifest
     assert manifest["score_matrix"]

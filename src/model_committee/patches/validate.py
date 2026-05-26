@@ -9,7 +9,12 @@ from model_committee.constants import ALLOWED_PATCH_FILES
 from model_committee.errors import PatchValidationError
 from model_committee.patches.extract import enforce_allowed_patch_files
 
-ALLOWED_PATCH_FILE_ORDER = ("DESIGN.md", "DECISIONS.md", "OPEN_QUESTIONS.md")
+ALLOWED_PATCH_FILE_ORDER = (
+    "DESIGN.md",
+    "DECISIONS.md",
+    "OPEN_QUESTIONS.md",
+    "PLANNING_KERNEL_CONTRACT.md",
+)
 RECOUNT_NORMALIZATION_WARNING = "Patch required --recount normalization."
 POSIX_NORMALIZATION_WARNING = "Patch normalized from POSIX unified diff to git extended format."
 
@@ -130,7 +135,9 @@ def _normalize_patch_with_recount(
 
 def validate_patch(repo: Path, proposal_id: str, patch: str) -> PatchValidationResult:
     if "diff --git" not in patch:
-        normalized_patch, normalized_changed_files, normalization_error = _normalize_patch_with_recount(repo, patch)
+        normalized_patch, normalized_changed_files, normalization_error = (
+            _normalize_patch_with_recount(repo, patch)
+        )
         if normalization_error or normalized_patch is None:
             return PatchValidationResult(
                 proposal_id=proposal_id,

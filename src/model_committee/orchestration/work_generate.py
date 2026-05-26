@@ -63,7 +63,8 @@ def run_work_generate(
 
     run_dir, manifest = create_run_dir(runs_dir, repo, question_id, config_path, command)
     schemas = copy_schema_files_to_run(run_dir)
-    prompt, _warn = render_work_prompt(repo, by_id[question_id], manifest.base_commit)
+    prompt, warn = render_work_prompt(repo, by_id[question_id], manifest.base_commit)
+    manifest.prompt_size_warning = warn
     codex_prompt = run_dir / "prompts" / "codex_work_prompt.md"
     claude_prompt = run_dir / "prompts" / "claude_work_prompt.md"
     ollama_prompt = run_dir / "prompts" / "ollama_work_prompt.md"
