@@ -32,3 +32,31 @@ def test_missing_canonical_file_is_hard_consistency_failure(tmp_path):
     assert report.status == "failed"
     assert {failure.code for failure in report.hard_failures} == {"MISSING_REPO_FILE"}
     assert "OPEN_QUESTIONS.md" in report.hard_failures[0].message
+
+
+def test_solved_tombstone_does_not_need_current_direction(tmp_path):
+    (tmp_path / "DESIGN.md").write_text("# Design\n", encoding="utf-8")
+    (tmp_path / "DECISIONS.md").write_text(
+        "# Decisions\n\n## UBU-D0001: Existing Decision\n\nAccepted.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "PLANNING_KERNEL_CONTRACT.md").write_text(
+        "# Planning Kernel Contract\n", encoding="utf-8"
+    )
+    (tmp_path / "OPEN_QUESTIONS.md").write_text(
+        """# Open Questions
+
+## UBU-Q0001: Solved Question
+
+Status: Solved Priority: MVP important Phase: Phase 1 Decision type: Process Auto-choice eligibility: Auto eligible Importance score: 80 Automation-likelihood score: 70 Risk score: 20 Answerability score: 100 Depends on: None Blocks: None Resolved by: UBU-D0001 Last scored: 2026-05-26 Scored from commit: None
+Resolved. See UBU-D0001.
+
+---
+""",
+        encoding="utf-8",
+    )
+
+    report = check_repo(tmp_path)
+
+    assert report.status == "passed"
+    assert "QUESTION_HAS_NO_CURRENT_DIRECTION" not in {warning.code for warning in report.warnings}

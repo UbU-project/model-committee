@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from model_committee.constants import ALLOWED_PATCH_FILES
+
 
 WORK_PROPOSAL_SCHEMA = {
     "type": "object",
@@ -34,7 +36,7 @@ WORK_PROPOSAL_SCHEMA = {
         "rationale": {"type": "string"},
         "changed_files": {
             "type": "array",
-            "items": {"type": "string", "enum": ["DESIGN.md", "DECISIONS.md", "OPEN_QUESTIONS.md"]},
+            "items": {"type": "string", "enum": sorted(ALLOWED_PATCH_FILES)},
         },
         "patch": {"type": "string"},
         "commit_message": {"type": "string"},

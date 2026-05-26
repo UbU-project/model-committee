@@ -138,7 +138,7 @@ def check_repo(repo: Path) -> ConsistencyReport:
                     question_id=question.question_id,
                 )
             )
-        if not question.has_current_direction:
+        if question.metadata.status == "Open" and not question.has_current_direction:
             warnings.append(
                 ConsistencyIssue(
                     code="QUESTION_HAS_NO_CURRENT_DIRECTION",
