@@ -28,8 +28,6 @@ exists only when a human operator commits to the canonical design repository.
   work providers, injected into prompts, snapshotted in runs, and patchable;
 - `rank` writes `Answerability score:` and `Last scored:` back to `OPEN_QUESTIONS.md`
   in the live repo after each ranking; `Scored from commit:` is not updated;
-- `work-generate` prompts models to tombstone solved questions, remove duplicate
-  information across source files, and compress content to effective minimum;
 - prompt-size warning: `manifest.prompt_size_warning = True` when rendered prompt
   is `>= 90% of PROMPT_SIZE_WARNING_LIMIT`; warning section emitted in `review.md`;
 - manifest `schema_version` bumped to `"0.3"`;

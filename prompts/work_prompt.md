@@ -59,29 +59,6 @@ Your output must satisfy this schema:
 {work_proposal_schema}
 ```
 
-## File hygiene requirements
-
-Apply the following hygiene rules whenever they are relevant to the selected question. These are mandatory when applicable; do not skip them.
-
-### Tombstone solved questions
-
-When a question in `OPEN_QUESTIONS.md` is resolved by this proposal, convert its full block to a compact tombstone. A tombstone contains exactly:
-
-1. The `## UBU-Qxxxx: Title` heading line (unchanged).
-2. The single-line metadata record with `Status: Solved` and `Resolved by: UBU-Dxxxx` filled in.
-3. A single resolution line: `Resolved. See UBU-Dxxxx.`
-4. A horizontal rule: `---`
-
-Remove all other prose, sub-sections (`### Background`, `### Options`, `### Current direction`, `### Resolution`), and blank lines between the metadata and the resolution line. The tombstone must parse without error under the existing metadata format.
-
-### Remove duplicate information
-
-When adding a decision to `DECISIONS.md` that supersedes or elaborates text already present in `DESIGN.md`, `DECISIONS.md`, or `OPEN_QUESTIONS.md`, remove or condense the superseded text. Do not add information that is already fully covered elsewhere in the canonical files.
-
-### Compress to effective minimum
-
-Write each new or updated section at the minimum length needed to convey the decision, constraint, or resolution unambiguously. Omit background narrative that is derivable from context or that repeats existing content. Prefer bullet lists over prose paragraphs for enumerated facts or field specifications.
-
 ## Requirements
 
 - Return exactly one JSON object.
