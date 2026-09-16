@@ -25,6 +25,7 @@ from model_committee.ranking.answerability import compute_answerability, is_work
 from model_committee.responses.schema_files import copy_schema_files_to_run
 from model_committee.runs.layout import create_run_dir
 from model_committee.runs.manifest import (
+    PromptContext,
     RunStatus,
     append_provider_attempt,
     append_provider_failure,
@@ -63,8 +64,17 @@ def run_work_generate(
 
     run_dir, manifest = create_run_dir(runs_dir, repo, question_id, config_path, command)
     schemas = copy_schema_files_to_run(run_dir)
-    prompt, warn = render_work_prompt(repo, by_id[question_id], manifest.base_commit)
+    prompt, warn, closure = render_work_prompt(repo, by_id[question_id], manifest.base_commit)
     manifest.prompt_size_warning = warn
+    manifest.prompt_context = PromptContext(
+        question_ids=closure.question_ids,
+        decision_ids=closure.decision_ids,
+        sections=closure.sections,
+        core_sections=closure.core_sections,
+        missing_refs=closure.missing_refs,
+        context_chars=closure.total_chars,
+        prompt_chars=len(prompt),
+    )
     codex_prompt = run_dir / "prompts" / "codex_work_prompt.md"
     claude_prompt = run_dir / "prompts" / "claude_work_prompt.md"
     ollama_prompt = run_dir / "prompts" / "ollama_work_prompt.md"

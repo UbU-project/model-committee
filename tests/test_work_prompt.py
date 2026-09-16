@@ -11,7 +11,7 @@ def test_work_prompt_requires_raw_git_diff_and_selected_question_anchor():
         item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
     }["UBU-Q0001"]
 
-    prompt, warn = render_work_prompt(repo, question, "fixture")
+    prompt, warn, _ = render_work_prompt(repo, question, "fixture")
 
     assert warn is False
     assert "Do not include hidden reasoning, `<think>` tags" in prompt
@@ -50,7 +50,7 @@ def test_work_prompt_renders_excerpts_not_whole_files():
         item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
     }["UBU-Q0003"]
 
-    prompt, _ = render_work_prompt(repo, question, "fixture")
+    prompt, _, _ = render_work_prompt(repo, question, "fixture")
 
     # UBU-Q0003 depends on UBU-Q0001, so that dependency is included as an excerpt
     assert "#### UBU-Q0001" in prompt
@@ -66,7 +66,7 @@ def test_work_prompt_states_excerpts_are_partial():
         item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
     }["UBU-Q0001"]
 
-    prompt, _ = render_work_prompt(repo, question, "fixture")
+    prompt, _, _ = render_work_prompt(repo, question, "fixture")
 
     assert "are **not** the whole canonical files" in prompt
     assert "Absence is not non-existence" in prompt
@@ -78,7 +78,7 @@ def test_work_prompt_injects_next_free_ids():
         item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
     }["UBU-Q0001"]
 
-    prompt, _ = render_work_prompt(repo, question, "fixture")
+    prompt, _, _ = render_work_prompt(repo, question, "fixture")
 
     # fixture has UBU-Q0001..UBU-Q0003 and UBU-D0001
     assert "next question id: `UBU-Q0004`" in prompt

@@ -38,8 +38,10 @@ ALWAYS_INCLUDE_SECTIONS = {
 
 PROMPT_SIZE_WARNING_LIMIT = 100_000
 ESTIMATED_CHARS_PER_TOKEN = 4
-DECISIONS_PROMPT_TOKEN_WARNING_LIMIT = 12_000
-DECISIONS_PROMPT_TOKEN_HARD_WARNING_LIMIT = 20_000
+
+# Fixed prompt cost outside the closure: template plus JSON schema. Used to warn when a
+# question's context will not fit, before a run is attempted.
+PROMPT_FIXED_OVERHEAD_CHARS = 6_000
 
 EXIT_SUCCESS = 0
 EXIT_RUNTIME_ERROR = 1

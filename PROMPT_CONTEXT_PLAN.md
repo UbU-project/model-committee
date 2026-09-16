@@ -1,7 +1,8 @@
 # Prompt Context Plan — dependency-closure filtering (v0.4)
 
-Status: Proposed
+Status: Steps 1-6 done; step 7 (record the architecture change) outstanding
 Created: 2026-09-16
+Last updated: 2026-09-16
 Applies to: `model-committee` v0.3.0 → v0.4
 
 ## 1. Problem
@@ -47,8 +48,11 @@ Closure for a selected question Q:
 | worst (`UBU-Q0137`) | 70,029 | 75,864 | 0.76x |
 | today (4 whole files) | 767,846 | 773,681 | 7.74x |
 
-Every Phase 1b question fits under `PROMPT_SIZE_WARNING_LIMIT`, with room to add the
-sync contract as a fifth source.
+> **Superseded — see step 4.** These figures came from a prototype that sliced a section
+> as "heading to next heading of any level", so `§16` meant only the prose before `§16.1`.
+> With correct nested-inclusive slicing the real mean is 0.40x and the real worst case is
+> 1.42x. The claim that every Phase 1b question fits is **false**: `UBU-Q0137` does not.
+> The table is kept to record what the estimate was and why it was wrong.
 
 ### Verified: excerpts do not break patching
 
@@ -285,6 +289,43 @@ existing rule wins; the framing now only says context lines must be quoted exact
 
 ### Step 6 — manifest and checker
 
+Status: **done 2026-09-16.** Suite: 75 passed, 0 errors.
+
+**Manifest.** `schema_version` `"0.3"` → `"0.4"`. New `PromptContext` records
+`question_ids`, `decision_ids`, `sections`, `core_sections`, `missing_refs`,
+`context_chars`, `prompt_chars`. `render_work_prompt` now returns the closure as a third
+value so `work_generate` can persist it. `create_run_dir` still snapshots whole files
+under `snapshot/`, so a run has both what the model saw and what the repo held.
+
+**Checker.** `DECISIONS_PROMPT_BUDGET_WARNING` and `_HARD_WARNING` are removed, along with
+`DECISIONS_PROMPT_TOKEN_*`. They measured whole-file size, which no longer drives the
+prompt — the warning that started this work was measuring the wrong thing, and is retired
+by making the measurement correct rather than by deleting more prose.
+
+Three per-question warnings replace them, computed over open questions only:
+
+| code | fires when | on `ubu-design` |
+|---|---|---|
+| `QUESTION_CONTEXT_OVER_BUDGET` | closure + overhead > `PROMPT_SIZE_WARNING_LIMIT` | 3 of 80 |
+| `QUESTION_SECTION_REF_UNRESOLVED` | a cited section does not exist | 0 of 80 |
+| `QUESTION_CONTEXT_THIN` | no dependency, decision, or section links | 6 of 80 |
+
+Signal-to-noise is good and every hit is actionable. `QUESTION_CONTEXT_THIN` correctly
+flags `UBU-Q0128`, whose real dependencies had to be recorded as prose because they are
+not registered questions — exactly the silent-missing-edge case the warning exists for.
+The three over-budget questions are `UBU-Q0085`, `UBU-Q0121`, `UBU-Q0137`.
+
+Cost: `RepoContext.load` 13ms plus 17ms for 80 closures, so `check` stays interactive.
+
+**Test-suite errors, diagnosed and fixed.** The 9 `test_patch_validate` /
+`test_fake_provider_flow` errors recorded against earlier steps were caused by
+`commit.gpgsign=true` in global git config while `tests/conftest.py` committed the fixture
+repo without a signing key. The tests were never broken. `git_fixture_repo` now commits
+with `-c commit.gpgsign=false`, and the suite is **75 passed, 0 errors** under signing-on
+config with no environment workaround.
+
+### Step 6 (original sketch)
+
 - Persist the selected ids/sections in the run manifest so a run is explainable and
   reproducible. Bump `manifest.schema_version` `"0.3"` → `"0.4"`.
 - `create_run_dir` keeps snapshotting full files for audit.
@@ -317,7 +358,9 @@ Plus `IMPLEMENTATION_CONTRACT.md` bump to v0.4.
 
 ## 6. Notes
 
-- Test baseline at time of writing: 47 passed, 9 errors. The 9 are environmental —
-  `commit.gpgsign=true` is set globally and `tests/test_patch_validate.py` commits
-  without a signing key. Unrelated to this work; fixable with
-  `-c commit.gpgsign=false` in the test helper.
+- Test suite: **75 passed, 0 errors** (2026-09-16, after step 6).
+- Earlier steps in this document record a baseline of "N passed, 9 errors". Those 9 were
+  never a defect in this work or in the tests: `commit.gpgsign=true` in global git config
+  made `tests/conftest.py` fail to commit the fixture repo. Fixed by passing
+  `-c commit.gpgsign=false` in `git_fixture_repo`. Read those earlier baselines as
+  "N passed" with the 9 discounted.

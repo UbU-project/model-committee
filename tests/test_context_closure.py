@@ -102,3 +102,54 @@ def test_closure_total_chars_counts_each_section_once():
     )
     # §3.1 is inside §3; its characters must not be counted twice
     assert result.total_chars == question_chars + section_chars + core_chars
+
+
+def test_check_reports_thin_context_for_unlinked_question(tmp_path):
+    from model_committee.consistency.checker import check_repo
+
+    for name in (
+        "DESIGN.md",
+        "DECISIONS.md",
+        "PLANNING_KERNEL_CONTRACT.md",
+        "DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md",
+    ):
+        (tmp_path / name).write_text(f"# {name}\n", encoding="utf-8")
+    (tmp_path / "OPEN_QUESTIONS.md").write_text(
+        "# Open Questions\n\n## UBU-Q0001: Unlinked\n\n"
+        "Status: Open Priority: MVP important Phase: Phase 1 Decision type: Process "
+        "Auto-choice eligibility: Auto eligible Importance score: 10 "
+        "Automation-likelihood score: 10 Risk score: 10 Answerability score: 10 "
+        "Depends on: None Blocks: None Resolved by: Unresolved Last scored: Never "
+        "Scored from commit: None\n\n### Current direction\n\nnone\n\n---\n",
+        encoding="utf-8",
+    )
+    report = check_repo(tmp_path)
+    codes = {issue.code for issue in report.warnings}
+    assert "QUESTION_CONTEXT_THIN" in codes
+    # the retired whole-file budget warnings must not come back
+    assert not any(code.startswith("DECISIONS_PROMPT_BUDGET") for code in codes)
+
+
+def test_check_reports_unresolvable_section_reference(tmp_path):
+    from model_committee.consistency.checker import check_repo
+
+    for name in (
+        "DECISIONS.md",
+        "PLANNING_KERNEL_CONTRACT.md",
+        "DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md",
+    ):
+        (tmp_path / name).write_text(f"# {name}\n", encoding="utf-8")
+    (tmp_path / "DESIGN.md").write_text("# Design\n\n## 1. Real\n\nbody\n", encoding="utf-8")
+    (tmp_path / "OPEN_QUESTIONS.md").write_text(
+        "# Open Questions\n\n## UBU-Q0001: Bad ref\n\n"
+        "Status: Open Priority: MVP important Phase: Phase 1 Decision type: Process "
+        "Auto-choice eligibility: Auto eligible Importance score: 10 "
+        "Automation-likelihood score: 10 Risk score: 10 Answerability score: 10 "
+        "Depends on: None Blocks: None Resolved by: Unresolved Last scored: Never "
+        "Scored from commit: None\n\nSee DESIGN.md §99.\n\n### Current direction\n\nx\n\n---\n",
+        encoding="utf-8",
+    )
+    report = check_repo(tmp_path)
+    issue = next(i for i in report.warnings if i.code == "QUESTION_SECTION_REF_UNRESOLVED")
+    assert "DESIGN.md §99" in issue.message
+    assert issue.question_id == "UBU-Q0001"

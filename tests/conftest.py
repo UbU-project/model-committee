@@ -15,7 +15,9 @@ def git_fixture_repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
     subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
     subprocess.run(
-        ["git", "-C", str(repo), "commit", "-m", "fixture"],
+        # -c commit.gpgsign=false: the fixture repo has no signing key, so a global
+        # commit.gpgsign=true would fail the commit and error every test using it.
+        ["git", "-C", str(repo), "-c", "commit.gpgsign=false", "commit", "-m", "fixture"],
         check=True,
         stdout=subprocess.PIPE,
     )

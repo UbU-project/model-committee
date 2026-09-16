@@ -54,8 +54,24 @@ class ProviderSuccessEvent(BaseModel):
     parsed_path: str | None = None
 
 
+class PromptContext(BaseModel):
+    """What the prompt was built from.
+
+    Models no longer see whole canonical files, so a run is only explainable if the
+    selected context is recorded. Full files are still snapshotted under `snapshot/`.
+    """
+
+    question_ids: list[str] = Field(default_factory=list)
+    decision_ids: list[str] = Field(default_factory=list)
+    sections: dict[str, list[str]] = Field(default_factory=dict)
+    core_sections: dict[str, list[str]] = Field(default_factory=dict)
+    missing_refs: dict[str, list[str]] = Field(default_factory=dict)
+    context_chars: int = 0
+    prompt_chars: int = 0
+
+
 class RunManifest(BaseModel):
-    schema_version: str = "0.3"
+    schema_version: str = "0.4"
     run_id: str
     created_at_utc: str
     repo_path: str
@@ -84,6 +100,7 @@ class RunManifest(BaseModel):
     human_review_required: bool = False
     artifact_publication_status: str = "not_applicable"
     prompt_size_warning: bool = False
+    prompt_context: PromptContext | None = None
 
 
 def utc_now_text() -> str:
