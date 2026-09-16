@@ -129,21 +129,47 @@ instruction.
 
 ### Step 3 — repair the reference graph
 
-Replace the twelve `§28` pointers on `UBU-Q0139`-`UBU-Q0150` with pointers to the
-sections that define each question's subject matter. Data change, not code. Indicative:
+Status: **done 2026-09-16.**
+
+Each question carries a `Defining context: <file> §§...` line after its metadata line
+(after it, never before — the parser takes the first non-blank line after the heading as
+the metadata record). Data change, not code. Mappings verified against section content,
+not titles:
 
 | Question | Subject | Sections |
 |---|---|---|
-| UBU-Q0140 | causality / ordering | §15 |
+| UBU-Q0130 | mutation envelope metadata | §4, §8, §9, §15 |
+| UBU-Q0139 | sync topology | §3, §25, §26 |
+| UBU-Q0140 | causality / ordering | §8, §15 |
+| UBU-Q0141 | encrypted indirect transport | §8, §27 |
+| UBU-Q0142 | mid-session disconnect | §16, §17 |
 | UBU-Q0143 | conflict classes | §16, §17 |
-| UBU-Q0144 | deletion on offline Devices | §18, §19 |
-| UBU-Q0145 | worker Device protocol | §5 |
-| UBU-Q0148 | Device / enclave identity | §5 |
-| UBU-Q0149 | token custody | TBD |
-| UBU-Q0150 | redacted handle stability | TBD |
+| UBU-Q0144 | deletion on offline Devices | §12, §18 |
+| UBU-Q0145 | worker Device protocol | §20 |
+| UBU-Q0146 | sync-state warnings | §23 |
+| UBU-Q0147 | manual-review Task regress | §17 |
+| UBU-Q0148 | Device / enclave identity | §4, §5 |
+| UBU-Q0149 | token custody | §21 |
+| UBU-Q0150 | redacted handle stability | §10, §12 |
 
-This is the step that makes step 4 sufficient. Each edge should be reviewed by a human;
-a wrong edge yields wrong context.
+Two mappings guessed from section titles were wrong and were corrected by reading the
+content: Q0142 is §16/§17 (`incomplete_sync_session` at line 701, checkpoint semantics at
+731), not §13/§14; Q0144 is §12/§18, not §18/§19.
+
+Scope was wider than "the twelve migrated questions". `UBU-Q0130` is an original Phase 1b
+question that references sync-only vocabulary directly and also needed an edge. It was
+the only one of `UBU-Q0130`-`UBU-Q0136` that did — verified by extracting backticked
+terms present in the sync contract but absent from `DESIGN.md`.
+
+Verified: the `UBU-Q0130` closure (itself + `Q0131`, `Q0140`, `Q0148` via `Depends on:`)
+now pulls §4, §5, §8, §9, §15 — 10,137 chars, covering all five terms the question asks
+about (`SyncStatement`, `observed_versions`, `recorded_time`, `effective_time`,
+`derived_state`), against 55,527 for the whole file. An 82% reduction with full
+vocabulary coverage.
+
+Note for step 4: §4 "Core definitions" (1,519 chars) is foundational vocabulary that many
+questions need and nothing naturally links to. It belongs in the always-include core
+rather than being repeated on individual questions.
 
 ### Step 4 — context-selection module
 
