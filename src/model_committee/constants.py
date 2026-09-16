@@ -16,6 +16,26 @@ ALLOWED_PATCH_FILES = {
     "OPEN_QUESTIONS.md",
     "PLANNING_KERNEL_CONTRACT.md",
 }
+DESIGN_FILE = "DESIGN.md"
+DECISIONS_FILE = "DECISIONS.md"
+OPEN_QUESTIONS_FILE = "OPEN_QUESTIONS.md"
+PLANNING_KERNEL_CONTRACT_FILE = "PLANNING_KERNEL_CONTRACT.md"
+DEVICE_SYNC_CONTRACT_FILE = "DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md"
+
+# Files sliced by section for dependency-closure context selection.
+SECTION_SOURCE_FILES = (
+    DESIGN_FILE,
+    PLANNING_KERNEL_CONTRACT_FILE,
+    DEVICE_SYNC_CONTRACT_FILE,
+)
+
+# Cross-cutting context that nothing in the reference graph links to, so closure
+# would never reach it. Kept small: it is paid on every run.
+ALWAYS_INCLUDE_SECTIONS = {
+    DESIGN_FILE: ("1",),  # Overview
+    DEVICE_SYNC_CONTRACT_FILE: ("4",),  # Core definitions (Device, SyncStatement, ...)
+}
+
 PROMPT_SIZE_WARNING_LIMIT = 100_000
 ESTIMATED_CHARS_PER_TOKEN = 4
 DECISIONS_PROMPT_TOKEN_WARNING_LIMIT = 12_000

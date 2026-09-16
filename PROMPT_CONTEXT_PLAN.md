@@ -173,6 +173,57 @@ rather than being repeated on individual questions.
 
 ### Step 4 — context-selection module
 
+Status: **done 2026-09-16.** `src/model_committee/context/` (`index.py`, `closure.py`),
+14 tests in `tests/test_context_closure.py`. `work_prompt.py` is untouched; wiring is
+step 5.
+
+Measured over the 19 Phase 1b questions, closure + 5,835 fixed overhead:
+
+| | vs `PROMPT_SIZE_WARNING_LIMIT` |
+|---|---|
+| today, four whole files | 7.75x |
+| mean closure | **0.40x** |
+| best (`UBU-Q0145`) | 0.11x |
+| worst (`UBU-Q0137`) | **1.42x — still over** |
+
+**Correction to this plan's earlier estimate.** The first prototype reported a 0.76x worst
+case and a 0.23x mean. That prototype sliced a section as "heading to next heading of any
+level", so `§16` meant only the prose before `§16.1`. Correct nested-inclusive slicing
+makes referenced sections substantially larger, and the honest numbers are the ones above.
+The mean still improves ~19x; the worst case does not fit.
+
+`UBU-Q0137` is over because two coarse top-level references dominate it: `DESIGN.md §3`
+(31,033 chars) and `§16` (30,280) are 61,313 of its 98,494 section chars. Its 17 questions
+and 15 decisions contribute only 39,915 between them. Options, none taken yet:
+
+- cap an oversized section to its intro plus subsection headings;
+- prefer the most specific reference when a decision cites a whole chapter;
+- accept it — `prompt_size_warning` fires, which is the warning working correctly, and
+  1.42x is still a 5.5x improvement on today for the worst case.
+
+Two defects found and fixed while building:
+
+- **Overlapping sections.** `§3` is nested-inclusive so it already contains `§3.1`;
+  selecting both emitted the text twice and double-counted the size.
+  `_drop_descendants` keeps the ancestor. This was a correctness bug, not only size.
+- **The retired `§28` stub resolved as a live reference.** The `Formerly UBU-QSYNC-NNN
+  (... §28, retired)` provenance lines added in step 3 were file-qualified references, so
+  every migrated question pulled in the redirect table. The provenance lines now read
+  `(retired from <file> section 28)` — readable to a human, inert to the resolver.
+
+Design decisions worth keeping:
+
+- **Only file-qualified references resolve.** A bare `§15` is ambiguous across sources and
+  is ignored rather than guessed at. The corpus already writes references file-qualified.
+- **Unresolvable references are recorded**, not dropped silently — `ClosureResult.
+  missing_refs` feeds step 6's warning.
+- **Always-include core is `DESIGN.md §1` + sync `§4`** (~4.2k), set in
+  `ALWAYS_INCLUDE_SECTIONS`. `DESIGN.md §2` "Core Principles" was the obvious candidate
+  for cross-cutting invariants but is 32,198 chars nested-inclusive — it would dominate
+  the mean closure, so it is left to explicit references.
+
+### Step 4 (original sketch)
+
 New package `src/model_committee/context/`:
 
 - Indexes: `DESIGN.md` and `PLANNING_KERNEL_CONTRACT.md` by dotted section number,
