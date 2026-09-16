@@ -71,7 +71,7 @@ Ollama.
 
 ## 3. Explicitly Out Of Scope
 
-`model-committee v0.2` must not implement:
+`model-committee v0.4` must not implement:
 
 - direct OpenAI API calls;
 - direct Anthropic API calls;
@@ -258,7 +258,7 @@ claude --bare --print "$PROMPT" --output-format json --json-schema "$SCHEMA_JSON
 
 Ollama remains a local work-proposal provider.
 
-Ollama does not score work proposals in v0.2.
+Ollama does not score work proposals in v0.4.
 
 Ollama outputs may use JSON extraction because local Ollama behavior is not
 schema-native in the same way as Codex and Claude Code.
@@ -267,7 +267,7 @@ schema-native in the same way as Codex and Claude Code.
 
 ## 9. Cross-Scoring Protocol
 
-The v0.2 protocol is:
+The cross-scoring protocol, unchanged since v0.2, is:
 
 1. Generate proposals from enabled work providers.
 2. Validate proposals against schema.
@@ -317,7 +317,7 @@ selected patch validation failure => no automated selection
 no valid cross-score from a different frontier provider => no automated selection
 ```
 
-Manual override is not implemented in v0.2.
+Manual override is not implemented in v0.4.
 
 Self-scores must be excluded from quorum evidence.
 
@@ -325,7 +325,7 @@ Self-scores must be excluded from quorum evidence.
 
 ## 11. Run Artifacts
 
-Run directories must include the v0.1 artifacts plus v0.2 artifacts:
+Run directories must contain:
 
 ```text
 runs/<run-id>/
@@ -467,6 +467,7 @@ PLANNING_KERNEL_CONTRACT.md
 Forbidden:
 
 ```text
+DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md
 README.md
 OUTREACH.md
 LICENSE
