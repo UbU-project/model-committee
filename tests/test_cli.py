@@ -15,3 +15,11 @@ def test_check_valid_repo(capsys):
 
 def test_check_invalid_repo_exits_2():
     assert main(["check", "--repo", "tests/fixtures/invalid_nonexistent_dependency"]) == 2
+
+
+def test_rank_consistency_failure_names_the_failure(capsys):
+    assert main(["rank", "--repo", "tests/fixtures/invalid_priority_value"]) == 2
+    err = capsys.readouterr().err
+    assert "hard consistency failure:" in err
+    assert "INVALID_ENUM_VALUE: UBU-Q9997: Invalid enum value for Priority: Urgent" in err
+    assert "expected one of: MVP blocker, MVP important, Post-MVP, Research" in err

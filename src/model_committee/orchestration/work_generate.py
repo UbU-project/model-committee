@@ -3,6 +3,7 @@ from pathlib import Path
 
 from model_committee.config import ModelCommitteeConfig
 from model_committee.consistency.checker import check_repo
+from model_committee.consistency.report import hard_failure_summary
 from model_committee.errors import (
     ConsistencyError,
     ModelOutputError,
@@ -53,7 +54,7 @@ def run_work_generate(
 ) -> Path:
     report = check_repo(repo)
     if report.hard_failures:
-        raise ConsistencyError("hard consistency failure")
+        raise ConsistencyError(hard_failure_summary(report))
     questions = parse_questions_file(repo / "OPEN_QUESTIONS.md")
     by_id = {question.question_id: question for question in questions}
     if question_id not in by_id:

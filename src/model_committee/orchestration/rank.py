@@ -2,6 +2,7 @@ from datetime import date
 from pathlib import Path
 
 from model_committee.consistency.checker import check_repo
+from model_committee.consistency.report import hard_failure_summary
 from model_committee.errors import ConsistencyError
 from model_committee.markdown.questions_parser import parse_questions_file, update_question_scores
 from model_committee.ranking.ranker import rank_questions
@@ -11,7 +12,7 @@ from model_committee.responses.schemas import RankingReport
 def run_rank(repo: Path, phase_filter: str | None = None) -> RankingReport:
     report = check_repo(repo)
     if report.hard_failures:
-        raise ConsistencyError("hard consistency failure")
+        raise ConsistencyError(hard_failure_summary(report))
     questions_path = repo / "OPEN_QUESTIONS.md"
     ranking_report = rank_questions(parse_questions_file(questions_path), phase_filter=phase_filter)
     score_by_id = {

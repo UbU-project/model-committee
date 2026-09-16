@@ -1,6 +1,7 @@
 from collections import Counter
 from pathlib import Path
 
+from model_committee.consistency.code_fences import code_fence_warnings
 from model_committee.consistency.decision_refs import nonexistent_decision_refs
 from model_committee.consistency.question_graph import dependency_edges, find_dependency_cycles
 from model_committee.context.closure import RepoContext, compute_closure
@@ -148,6 +149,8 @@ def check_repo(repo: Path) -> ConsistencyReport:
             )
         )
 
+    warnings.extend(code_fence_warnings("DECISIONS.md", decisions_text))
+    warnings.extend(code_fence_warnings("OPEN_QUESTIONS.md", questions_text))
     warnings.extend(_context_warnings(repo, questions))
 
     return ConsistencyReport(

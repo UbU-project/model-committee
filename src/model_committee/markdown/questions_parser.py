@@ -73,7 +73,8 @@ def _parse_refs(value: str, allowed_sentinel: str = "None") -> list[str]:
 
 def _require_enum(field: str, value: str, allowed: set[str]) -> str:
     if value not in allowed:
-        raise ParseError(f"Invalid enum value for {field}: {value}")
+        expected = ", ".join(sorted(allowed))
+        raise ParseError(f"Invalid enum value for {field}: {value} (expected one of: {expected})")
     return value
 
 
