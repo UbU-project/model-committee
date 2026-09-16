@@ -43,6 +43,9 @@ def test_solved_tombstone_does_not_need_current_direction(tmp_path):
     (tmp_path / "PLANNING_KERNEL_CONTRACT.md").write_text(
         "# Planning Kernel Contract\n", encoding="utf-8"
     )
+    (tmp_path / "DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md").write_text(
+        "# Device Sync and Compartment Contract\n", encoding="utf-8"
+    )
     (tmp_path / "OPEN_QUESTIONS.md").write_text(
         """# Open Questions
 

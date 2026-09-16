@@ -18,6 +18,9 @@ def render_work_prompt(repo: Path, question, base_commit: str) -> tuple[str, boo
         planning_kernel_contract_md=(repo / "PLANNING_KERNEL_CONTRACT.md").read_text(
             encoding="utf-8"
         ),
+        device_sync_contract_md=(repo / "DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md").read_text(
+            encoding="utf-8"
+        ),
         work_proposal_schema=json.dumps(WORK_PROPOSAL_SCHEMA, indent=2),
     )
     return rendered, len(rendered) >= int(0.9 * PROMPT_SIZE_WARNING_LIMIT)

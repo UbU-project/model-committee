@@ -42,6 +42,15 @@ Base commit: `{base_commit}`
 {planning_kernel_contract_md}
 ```
 
+### DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md
+
+This file is read-only context. It is not in the patch allowlist: do not propose changes
+to it. Use it to resolve vocabulary and mechanisms the selected question depends on.
+
+```markdown
+{device_sync_contract_md}
+```
+
 ## JSON Schema
 
 Your output must satisfy this schema:

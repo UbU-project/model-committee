@@ -10,7 +10,7 @@ QUESTION_HEADING_RE = re.compile(r"^## (UBU-Q[0-9]{4}): (.+)$")
 
 STATUS_VALUES = {"Open", "Solved", "Deferred", "Superseded", "Archived", "Decomposed"}
 PRIORITY_VALUES = {"MVP blocker", "MVP important", "Post-MVP", "Research"}
-PHASE_VALUES = {"Phase 1", "Phase 2", "Phase 3", "Post-MVP"}
+PHASE_VALUES = {"Phase 1", "Phase 1b", "Phase 2", "Phase 3", "Post-MVP"}
 DECISION_TYPE_VALUES = {
     "Scope",
     "Data model",
