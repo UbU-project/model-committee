@@ -2,25 +2,26 @@ import json
 from pathlib import Path
 
 from model_committee.constants import PROMPT_SIZE_WARNING_LIMIT
+from model_committee.context.closure import RepoContext, compute_closure
+from model_committee.context.render import next_free_ids, render_excerpts
 from model_committee.responses.schema_files import WORK_PROPOSAL_SCHEMA
 
 
 def render_work_prompt(repo: Path, question, base_commit: str) -> tuple[str, bool]:
     template = Path("prompts/work_prompt.md").read_text(encoding="utf-8")
+    context = RepoContext.load(repo)
+    closure = compute_closure(context, question.question_id)
+    next_question_id, next_decision_id = next_free_ids(context)
     rendered = template.format(
         question_id=question.question_id,
         question_title=question.title,
         question_block=question.block,
         base_commit=base_commit,
-        design_md=(repo / "DESIGN.md").read_text(encoding="utf-8"),
-        decisions_md=(repo / "DECISIONS.md").read_text(encoding="utf-8"),
-        open_questions_md=(repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8"),
-        planning_kernel_contract_md=(repo / "PLANNING_KERNEL_CONTRACT.md").read_text(
-            encoding="utf-8"
+        context_excerpts=render_excerpts(
+            context, closure, exclude_question_id=question.question_id
         ),
-        device_sync_contract_md=(repo / "DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md").read_text(
-            encoding="utf-8"
-        ),
+        next_question_id=next_question_id,
+        next_decision_id=next_decision_id,
         work_proposal_schema=json.dumps(WORK_PROPOSAL_SCHEMA, indent=2),
     )
     return rendered, len(rendered) >= int(0.9 * PROMPT_SIZE_WARNING_LIMIT)

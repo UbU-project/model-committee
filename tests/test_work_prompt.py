@@ -42,3 +42,44 @@ def test_score_prompt_includes_static_provider_weights():
     assert "## Provider weights" in prompt
     assert '"codex": 1.0' in prompt
     assert "historical diagnostic context only in v0.2" in prompt
+
+
+def test_work_prompt_renders_excerpts_not_whole_files():
+    repo = Path("tests/fixtures/valid_repo")
+    question = {
+        item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
+    }["UBU-Q0003"]
+
+    prompt, _ = render_work_prompt(repo, question, "fixture")
+
+    # UBU-Q0003 depends on UBU-Q0001, so that dependency is included as an excerpt
+    assert "#### UBU-Q0001" in prompt
+    # ...but the unrelated UBU-Q0002 is not pulled in
+    assert "#### UBU-Q0002" not in prompt
+    # the selected question is shown under "Selected question", not repeated as an excerpt
+    assert "#### UBU-Q0003" not in prompt
+
+
+def test_work_prompt_states_excerpts_are_partial():
+    repo = Path("tests/fixtures/valid_repo")
+    question = {
+        item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
+    }["UBU-Q0001"]
+
+    prompt, _ = render_work_prompt(repo, question, "fixture")
+
+    assert "are **not** the whole canonical files" in prompt
+    assert "Absence is not non-existence" in prompt
+
+
+def test_work_prompt_injects_next_free_ids():
+    repo = Path("tests/fixtures/valid_repo")
+    question = {
+        item.question_id: item for item in parse_questions_file(repo / "OPEN_QUESTIONS.md")
+    }["UBU-Q0001"]
+
+    prompt, _ = render_work_prompt(repo, question, "fixture")
+
+    # fixture has UBU-Q0001..UBU-Q0003 and UBU-D0001
+    assert "next question id: `UBU-Q0004`" in prompt
+    assert "next decision id: `UBU-D0002`" in prompt

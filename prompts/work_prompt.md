@@ -16,40 +16,33 @@ Base commit: `{base_commit}`
 {question_block}
 ```
 
-## Canonical design files
+## Canonical design context
 
-### DESIGN.md
+The excerpts below are **not** the whole canonical files. They are the subset selected by
+following references from the selected question: its dependencies, the decisions those
+questions cite, and the sections those cite in turn.
 
-```markdown
-{design_md}
-```
+Read them under these rules:
 
-### DECISIONS.md
+- **Absence is not non-existence.** Ids and sections you cannot see here still exist.
+  Never conclude that a question is unasked, a decision unmade, or a section absent
+  because it is not shown.
+- **Do not renumber or reuse ids.** Allocate new entries from the next free ids below.
+- **Patch context must match the real file.** Hunks are applied against the full files,
+  not against these excerpts, and `git apply` locates them by surrounding context. Quote
+  surrounding lines exactly as they appear here.
+- **Scope your edits to what you can see.** Do not delete or rewrite text on the
+  assumption that it duplicates something outside these excerpts.
 
-```markdown
-{decisions_md}
-```
+Next free ids — use these for anything you add:
 
-### OPEN_QUESTIONS.md
+- next question id: `{next_question_id}`
+- next decision id: `{next_decision_id}`
 
-```markdown
-{open_questions_md}
-```
+`DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md` is read-only context and is not in the patch
+allowlist: do not propose changes to it.
 
-### PLANNING_KERNEL_CONTRACT.md
-
-```markdown
-{planning_kernel_contract_md}
-```
-
-### DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md
-
-This file is read-only context. It is not in the patch allowlist: do not propose changes
-to it. Use it to resolve vocabulary and mechanisms the selected question depends on.
-
-```markdown
-{device_sync_contract_md}
-```
+{context_excerpts}
 
 ## JSON Schema
 

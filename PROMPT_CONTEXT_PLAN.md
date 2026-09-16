@@ -237,6 +237,42 @@ New package `src/model_committee/context/`:
 
 ### Step 5 — renderer, template, framing
 
+Status: **done 2026-09-16.** `context/render.py` (`render_excerpts`, `next_free_ids`),
+`prompts/work_prompt.py` rewritten, `prompts/work_prompt.md` restructured. 3 new tests in
+`tests/test_work_prompt.py`. Suite: 64 passed, 9 pre-existing errors.
+
+Rendered prompts against `ubu-design`, 19 Phase 1b questions:
+
+| | chars | vs limit |
+|---|---|---|
+| before (whole files, every question) | 830,017 | 8.30x |
+| mean | 39,759 | **0.40x** |
+| min (`UBU-Q0145`) | 11,100 | 0.11x |
+| max (`UBU-Q0137`) | 143,464 | 1.43x |
+
+`prompt_size_warning` now fires for `UBU-Q0137` alone, rather than for every run.
+
+Excerpts are labelled by file and by id or section, so a proposal can cite its source and
+a reviewer can see exactly what the model was shown. The selected question appears once,
+under "Selected question", and is excluded from the excerpt block.
+
+Framing added to the template, all four load-bearing:
+
+- excerpts are explicitly **not** the whole files;
+- **absence is not non-existence** — unshown ids still exist;
+- patch context must match the real file, not the excerpt;
+- edits must not assume text outside the excerpts duplicates anything.
+
+Next-free ids (`next question id`, `next decision id`) are computed from the indexes and
+injected, since models can no longer derive them from a whole file.
+
+One contradiction fixed while writing the framing: a draft line said hunk line numbers
+"need not be exact" (true — see the `git apply` finding above), but the template already
+required accurate `@@` ranges. Conflicting instructions to the model. The stricter
+existing rule wins; the framing now only says context lines must be quoted exactly.
+
+### Step 5 (original sketch)
+
 - `work_prompt.py` renders excerpts instead of whole files.
 - Template: excerpt sections replace the fixed per-file placeholders. Note
   `render_work_prompt` uses `str.format`, so any literal `{` added to the template must
