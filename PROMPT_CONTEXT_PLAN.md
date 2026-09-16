@@ -1,6 +1,6 @@
 # Prompt Context Plan — dependency-closure filtering (v0.4)
 
-Status: Steps 1-6 done; step 7 (record the architecture change) outstanding
+Status: **Complete** — steps 1-7 done
 Created: 2026-09-16
 Last updated: 2026-09-16
 Applies to: `model-committee` v0.3.0 → v0.4
@@ -336,6 +336,32 @@ config with no environment workaround.
   section) — makes missing graph edges visible rather than silent.
 
 ### Step 7 — record the architecture change
+
+Status: **done 2026-09-16.**
+
+- `ubu-design/DECISIONS.md`: **`UBU-D0246`** — "The model-committee sends
+  dependency-closure context, not whole canonical files". Extends `UBU-D0150` and
+  `UBU-D0176`. Records the five consequences for the design repo: section pointers are
+  now functional rather than decorative; only file-qualified references resolve; the sync
+  contract is a read-only fifth source; the hygiene rules are withdrawn, with the
+  tombstoning gap named; runs stay auditable via `prompt_context` plus `snapshot/`.
+- `IMPLEMENTATION_CONTRACT.md` bumped to v0.4, with a **Withdrawn in v0.4** subsection and
+  a **Carried forward from v0.3** subsection. The latter restores the v0.3 hygiene bullet
+  that step 2 deleted, so the version history reads correctly: v0.3 had the rules, v0.4
+  withdraws them.
+- `VERSION`, `pyproject.toml`, `README.md` bumped `0.3.0` → `0.4.0`;
+  `tests/test_cli.py` updated.
+
+`UBU-D0246` is filed as `Accepted → model-committee ...`, **not** `→ DESIGN.md §N`. The
+`→ DESIGN.md` form asserts the content was absorbed into `DESIGN.md`, which would be false
+here and would mark this decision's body as compressible under the 2026-09-15 rule.
+Several decisions already use the code-repo target form (`Accepted → ubu-orchestrator`),
+so this follows existing convention.
+
+Final state: `check` passes on `ubu-design` (150 questions, 242 decisions, 0 hard
+failures); suite 75 passed, 0 errors; lint and format clean.
+
+### Step 7 (original sketch)
 
 New `UBU-D` in `ubu-design/DECISIONS.md`, in the style of `UBU-D0150`, recording:
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 DEFAULT_CONFIG_PATH = Path("config/models.json")
 DEFAULT_RUNS_DIR = Path("runs")
 REQUIRED_REPO_FILES = (

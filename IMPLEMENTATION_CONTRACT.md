@@ -1,4 +1,4 @@
-# model-committee v0.3 Implementation Contract
+# model-committee v0.4 Implementation Contract
 
 Status: Accepted implementation contract  
 Project: `model-committee`  
@@ -20,20 +20,49 @@ exists only when a human operator commits to the canonical design repository.
 
 ---
 
-## 2. v0.3 Scope
+## 2. v0.4 Scope
 
-`model-committee v0.3` must implement the v0.2 workflow plus:
+`model-committee v0.4` must implement the v0.3 workflow plus:
 
-- `PLANNING_KERNEL_CONTRACT.md` as a fourth canonical source file: read by all
-  work providers, injected into prompts, snapshotted in runs, and patchable;
+- `DEVICE_SYNC_AND_COMPARTMENT_CONTRACT.md` as a fifth canonical source file: read,
+  injected into prompts, and snapshotted in runs, but **not** patchable;
+- work prompts carry dependency-closure excerpts instead of whole canonical files.
+  The closure is the selected question, its transitive `Depends on:` closure, the
+  decisions those questions cite, the sections those cite by file-qualified `§`
+  reference, and a small always-include core;
+- only file-qualified section references resolve; a bare `§N` is ambiguous across
+  source files and must not be guessed at;
+- work prompts must state that excerpts are partial, that ids not shown still exist,
+  and must supply the next free question and decision ids, which models can no longer
+  derive from a whole file;
+- `check` replaces `DECISIONS_PROMPT_BUDGET_WARNING` and `_HARD_WARNING` with the
+  per-question warnings `QUESTION_CONTEXT_OVER_BUDGET`,
+  `QUESTION_SECTION_REF_UNRESOLVED`, and `QUESTION_CONTEXT_THIN`;
+- manifest `schema_version` bumped to `"0.4"`, with `prompt_context` recording the
+  question ids, decision ids, sections, core sections, unresolved references, and
+  context/prompt character counts a run was built from;
+- full canonical files remain snapshotted under `runs/<run-id>/snapshot/`, so a run
+  records both what the model saw and what the repository held.
+
+### Withdrawn in v0.4
+
+- the v0.3 file-hygiene prompt rules — tombstone solved questions, remove duplicate
+  information across source files, and compress content to effective minimum — are
+  removed. All three require whole-corpus visibility, which excerpt-based prompts do
+  not provide: "remove duplicate information" would instruct a model to delete content
+  whose other copy it cannot see. Corpus hygiene that still matters belongs in `check`,
+  where whole files are visible, not in the prompt.
+
+### Carried forward from v0.3
+
+- `PLANNING_KERNEL_CONTRACT.md` as a canonical source file, read, injected, snapshotted,
+  and patchable;
 - `rank` writes `Answerability score:` and `Last scored:` back to `OPEN_QUESTIONS.md`
   in the live repo after each ranking; `Scored from commit:` is not updated;
 - prompt-size warning: `manifest.prompt_size_warning = True` when rendered prompt
-  is `>= 90% of PROMPT_SIZE_WARNING_LIMIT`; warning section emitted in `review.md`;
-- manifest `schema_version` bumped to `"0.3"`;
-- `PLANNING_KERNEL_CONTRACT.md` added to patch allowlist.
+  is `>= 90% of PROMPT_SIZE_WARNING_LIMIT`; warning section emitted in `review.md`.
 
-Ollama remains a local work-proposal provider and does not score in v0.3.
+Ollama remains a local work-proposal provider and does not score in v0.4.
 
 Fake provider mode must remain deterministic and must not call Codex, Claude, or
 Ollama.

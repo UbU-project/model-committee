@@ -4,7 +4,7 @@ from model_committee.cli import main
 
 def test_version(capsys):
     assert main(["version"]) == 0
-    assert capsys.readouterr().out.strip() == "model-committee 0.3.0"
+    assert capsys.readouterr().out.strip() == "model-committee 0.4.0"
     assert __version__ == "0.3.0"
 
 
