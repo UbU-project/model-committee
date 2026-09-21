@@ -48,6 +48,24 @@ def test_parse_tombstone_format():
     assert q.metadata.answerability_score == 100
 
 
+@pytest.mark.parametrize("phase", ["Phase 4", "Phase 5"])
+def test_parse_new_phase_values(phase):
+    text = _TOMBSTONE_TEXT.replace("Phase: Phase 1", f"Phase: {phase}")
+    questions = parse_questions_text(text)
+    assert questions[0].metadata.phase == phase
+
+
+@pytest.mark.parametrize("phase", ["Phase 3B", "Phase 4+"])
+def test_parse_rejects_old_phase_values(phase):
+    text = _TOMBSTONE_TEXT.replace("Phase: Phase 1", f"Phase: {phase}")
+    with pytest.raises(ParseError) as exc:
+        parse_questions_text(text)
+    assert str(exc.value) == (
+        f"UBU-Q0099: Invalid enum value for Phase: {phase} "
+        "(expected one of: Phase 1, Phase 1b, Phase 2, Phase 3, Phase 4, Phase 5, Post-MVP)"
+    )
+
+
 _SCORE_WRITEBACK_TEXT = """\
 # Open Questions
 

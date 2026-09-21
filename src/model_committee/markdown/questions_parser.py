@@ -10,7 +10,8 @@ QUESTION_HEADING_RE = re.compile(r"^## (UBU-Q[0-9]{4}): (.+)$")
 
 STATUS_VALUES = {"Open", "Solved", "Deferred", "Superseded", "Archived", "Decomposed"}
 PRIORITY_VALUES = {"MVP blocker", "MVP important", "Post-MVP", "Research"}
-PHASE_VALUES = {"Phase 1", "Phase 1b", "Phase 2", "Phase 3", "Post-MVP"}
+# Phase vocabulary follows ubu-design UBU-D0275 (DESIGN.md §4.7).
+PHASE_VALUES = {"Phase 1", "Phase 1b", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "Post-MVP"}
 DECISION_TYPE_VALUES = {
     "Scope",
     "Data model",
