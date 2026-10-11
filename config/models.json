@@ -2,7 +2,7 @@
   "codex": {
     "enabled": true,
     "command": "codex",
-    "model": "gpt-5.5",
+    "model": "gpt-6.1-sol",
     "timeout_seconds": 3600,
     "weight": 1.0,
     "sandbox": "read-only",
@@ -14,7 +14,7 @@
     "enabled": true,
     "score_only": true,
     "command": "claude",
-    "model": "sonnet",
+    "model": "claude-fable-5-1",
     "timeout_seconds": 3600,
     "weight": 1.0,
     "tools": "",
@@ -29,7 +29,7 @@
     "models": [
       {
         "name": "sam860/deepseek-r1-0528-qwen3:8b",
-        "enabled": true,
+        "enabled": false,
         "priority": 1,
         "weight": 0.35,
         "max_context_tokens": 32768,
@@ -42,7 +42,7 @@
       },
       {
         "name": "qooba/qwen3-coder-30b-a3b-instruct:q3_k_m",
-        "enabled": true,
+        "enabled": false,
         "priority": 2,
         "weight": 0.3,
         "max_context_tokens": 65536,

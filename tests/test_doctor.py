@@ -36,7 +36,7 @@ def test_doctor_checks_claude_json_schema_support(tmp_path, monkeypatch, capsys)
             return subprocess.CompletedProcess(
                 args,
                 0,
-                stdout="--bare --print --output-format --json-schema --tools --model --max-turns",
+                stdout="--bare --print --output-format --json-schema --tools --model",
             )
         if args == ["claude", "--bare", "auth", "status", "--json"]:
             return subprocess.CompletedProcess(

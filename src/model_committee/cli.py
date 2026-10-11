@@ -187,7 +187,7 @@ def _doctor_claude(claude_config, repo: Path) -> bool:
         check=False,
     )
     help_text = help_result.stdout
-    required = ["--print", "--output-format", "--json-schema", "--tools", "--model", "--max-turns"]
+    required = ["--print", "--output-format", "--json-schema", "--tools", "--model"]
     if claude_config.bare:
         required.append("--bare")
     missing = [flag for flag in required if flag not in help_text]

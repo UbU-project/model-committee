@@ -46,8 +46,6 @@ def test_claude_provider_argv_construction():
         "",
         "--model",
         "sonnet",
-        "--max-turns",
-        "3",
     ]
     assert "--allowedTools" not in argv
     assert "--allowed-tools" not in argv

@@ -173,7 +173,8 @@ def build_claude_argv(config: ClaudeConfig, schema_json: str) -> list[str]:
             config.tools,
         ]
     )
-    args.extend(["--model", config.model, "--max-turns", str(config.max_turns)])
+    # Claude Code 2.1.296 removed --max-turns; with --tools "" a --print run is one turn anyway.
+    args.extend(["--model", config.model])
     if config.max_budget_usd is not None:
         args.extend(["--max-budget-usd", str(config.max_budget_usd)])
     return args
