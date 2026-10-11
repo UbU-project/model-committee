@@ -18,6 +18,7 @@ from model_committee.constants import (
     EXIT_PROVIDER_FAILURE,
     EXIT_RUNTIME_ERROR,
     EXIT_SUCCESS,
+    EXIT_USER_CANCELED,
     REQUIRED_REPO_FILES,
     VERSION,
 )
@@ -34,6 +35,7 @@ from model_committee.markdown.questions_parser import PHASE_VALUES
 from model_committee.orchestration.check import run_check
 from model_committee.orchestration.rank import run_rank
 from model_committee.orchestration.run_loop import run_loop
+from model_committee.orchestration.uber_loop import run_uber_loop
 from model_committee.orchestration.work_generate import run_work_generate
 from model_committee.orchestration.work_score import run_work_score
 from model_committee.orchestration.work_select import run_work_select
@@ -69,10 +71,11 @@ def build_parser() -> argparse.ArgumentParser:
     work_score.add_argument("--fake-providers", action="store_true")
     work_select = sub.add_parser("work-select")
     work_select.add_argument("--run", required=True, type=Path)
-    loop = sub.add_parser("run-loop")
-    add_common_repo(loop)
-    loop.add_argument("--fake-providers", action="store_true")
-    loop.add_argument("--phase", choices=sorted(PHASE_VALUES), default=None)
+    for name in ("run-loop", "uber-loop"):
+        loop = sub.add_parser(name)
+        add_common_repo(loop)
+        loop.add_argument("--fake-providers", action="store_true")
+        loop.add_argument("--phase", choices=sorted(PHASE_VALUES), default=None)
     doctor = sub.add_parser("doctor")
     add_common_repo(doctor)
     sub.add_parser("version")
@@ -315,6 +318,21 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(run_dir.name)
             return EXIT_SUCCESS
+        if args.command == "uber-loop":
+            run_uber_loop(
+                args.repo,
+                load_config(args.config),
+                args.config,
+                args.runs_dir,
+                args.fake_providers,
+                phase_filter=args.phase,
+            )
+            return EXIT_SUCCESS
+    except KeyboardInterrupt:
+        if args.command != "uber-loop":
+            raise
+        print("uber-loop canceled", file=sys.stderr)
+        return EXIT_USER_CANCELED
     except ConsistencyError as exc:
         print(str(exc), file=sys.stderr)
         return EXIT_CONSISTENCY_FAILURE

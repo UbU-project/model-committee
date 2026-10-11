@@ -31,10 +31,21 @@ def create_run_dir(
     config_path: Path | None,
     command: str,
 ) -> tuple[Path, RunManifest]:
-    run_id = make_run_id(question_id)
-    run_dir = runs_root / run_id
+    runs_root.mkdir(parents=True, exist_ok=True)
+    base_run_id = make_run_id(question_id)
+    run_id = base_run_id
+    suffix = 0
+    while True:
+        run_dir = runs_root / run_id
+        try:
+            run_dir.mkdir()
+        except FileExistsError:
+            suffix += 1
+            run_id = f"{base_run_id}-{suffix}"
+        else:
+            break
     for name in ("snapshot", "schemas", "prompts", "responses", "parsed", "patches"):
-        (run_dir / name).mkdir(parents=True, exist_ok=True)
+        (run_dir / name).mkdir()
     for filename in REQUIRED_REPO_FILES:
         shutil.copy2(repo / filename, run_dir / "snapshot" / filename)
     manifest = RunManifest(

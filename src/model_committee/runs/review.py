@@ -145,7 +145,8 @@ git -C {manifest.repo_path} commit -S -F "$(pwd)/runs/{manifest.run_id}/commit_m
     text += f"""
 ## Artifact Publication
 
-Operator-run only. Do not execute automatically from model-committee.
+Run these commands manually, or invoke `model-committee uber-loop` to automate
+publication after the signed design commit.
 
 ```bash
 RUN_ID="{manifest.run_id}"

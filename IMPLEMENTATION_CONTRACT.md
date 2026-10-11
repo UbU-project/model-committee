@@ -16,7 +16,8 @@ asks approved model providers to propose concrete changesets, cross-scores those
 proposals, validates patches, and writes reviewable artifacts.
 
 `model-committee` is not the canonical decision engine. Accepted design state
-exists only when a human operator commits to the canonical design repository.
+exists in commits to the canonical design repository. An operator may explicitly
+invoke `uber-loop` to apply and commit proposals that pass automated selection.
 
 ---
 
@@ -87,6 +88,10 @@ Ollama.
 - full Association automation;
 - UbU planning-kernel work.
 
+The explicitly invoked `uber-loop` command is the exception for automatic patch
+application, signed commits, artifact publication, and artifact repository
+pushes. Other commands retain the operator-run workflow.
+
 `model-committee` MUST NOT directly call Anthropic APIs.
 
 `model-committee` MAY invoke approved external CLI subprocesses, including
@@ -143,10 +148,36 @@ Commands:
 - `work-score`
 - `work-select`
 - `run-loop`
+- `uber-loop`
 - `doctor`
 - `version`
 
 `work-select` must not apply patches. It writes review artifacts only.
+
+`uber-loop` accepts all `run-loop` options: `--repo`, `--config`, `--runs-dir`,
+`--fake-providers`, and `--phase`. It repeatedly:
+
+1. Calls `run-loop` with the same options, including the phase filter.
+2. Applies the successful run's `patches/selected.patch` to `--repo`.
+3. Stages the paths changed by that patch.
+4. Creates a signed design commit with `git commit -S -F` using that run's
+   `commit_message.txt`.
+5. Copies the exact returned run directory to
+   `../model-committee-artifacts/runs/<run-id>`, stages it, creates a signed
+   `UMC artifact <run-id>` commit, and pushes the artifact repository.
+
+The artifact repository is relative to the invoking working directory. A custom
+`--runs-dir` changes the source run directory without changing that destination.
+Git signing must be configured in both repositories, and the artifact repository
+must already exist with a push remote. Both indexes must be empty at the start
+of each iteration. Unstaged edits are allowed; staging a patch path includes all
+edits in that file. Ranking changes to `OPEN_QUESTIONS.md` remain unstaged when
+the selected patch does not change it. An existing artifact run destination must
+be rejected before applying the patch.
+
+Stop immediately on any failure, including no eligible question, or Ctrl-C.
+Preserve the existing failure exit codes; Git and copy failures use exit code 1,
+and Ctrl-C uses exit code 8. Completed operations are not rolled back.
 
 ---
 
@@ -161,7 +192,7 @@ Commands:
 5 = no valid patch proposals
 6 = patch validation failed
 7 = no acceptable scorer selection
-8 = user canceled external process
+8 = user canceled external process or uber-loop
 9 = human review required by quorum/disagreement policy
 ```
 
@@ -395,8 +426,10 @@ runs/<run-id>/
 - `prompt_size_warning`
 
 `artifact_publication_status` is `operator_pending` after `review.md` is
-written. `model-committee` must not automatically copy, commit, or push
-artifacts to `../model-committee-artifacts`.
+written. This records selection-time state; `uber-loop` preserves the generated
+artifacts without updating this field after publication. Only the explicitly
+invoked `uber-loop` command may automatically copy, commit, or push artifacts
+to `../model-committee-artifacts`.
 
 ---
 
@@ -425,8 +458,9 @@ git -C ../model-committee-artifacts commit -S -m "UMC artifact ${RUN_ID}"
 git -C ../model-committee-artifacts push
 ```
 
-These commands are documentation for the operator only. They must not be
-executed automatically.
+These commands document the default operator-run workflow. The explicitly
+invoked `uber-loop` command performs the corresponding operations automatically,
+using the actual returned run directory for its source paths.
 
 ---
 
