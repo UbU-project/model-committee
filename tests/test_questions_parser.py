@@ -48,6 +48,14 @@ def test_parse_tombstone_format():
     assert q.metadata.answerability_score == 100
 
 
+def test_parse_rejects_resolved_status():
+    text = _TOMBSTONE_TEXT.replace("UBU-Q0099", "UBU-Q0112").replace(
+        "Status: Solved", "Status: Resolved"
+    )
+    with pytest.raises(ParseError, match="UBU-Q0112: Invalid enum value for Status: Resolved"):
+        parse_questions_text(text)
+
+
 @pytest.mark.parametrize("phase", ["Phase 4", "Phase 5"])
 def test_parse_new_phase_values(phase):
     text = _TOMBSTONE_TEXT.replace("Phase: Phase 1", f"Phase: {phase}")

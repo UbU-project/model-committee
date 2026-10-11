@@ -32,6 +32,7 @@ def _validation(proposal_id: str) -> PatchValidationResult:
         proposal_id=proposal_id,
         patch_applies=True,
         allowlist_passed=True,
+        question_schema_passed=True,
         changed_files=["DESIGN.md"],
     )
 
@@ -83,6 +84,22 @@ def test_quorum_passes_with_valid_cross_score_and_no_critical_disagreement():
     assert flags == []
     assert quorum.valid is True
     assert quorum.selected_proposal_id == "codex-work-001"
+
+
+def test_quorum_rejects_schema_failure_despite_perfect_cross_score():
+    proposal = _proposal()
+    validation = _validation(proposal.proposal_id).model_copy(
+        update={"question_schema_passed": False, "error": "Invalid enum value for Status: Resolved"}
+    )
+    aggregates, _flags, quorum = evaluate_quorum(
+        proposals={proposal.proposal_id: proposal},
+        validations={proposal.proposal_id: validation},
+        score_matrix=[_row(proposal.proposal_id, "codex", "claude", 100)],
+    )
+    assert aggregates == []
+    assert quorum.valid is False
+    assert quorum.selected_proposal_id is None
+    assert "no valid work proposal" in quorum.blocked_reasons
 
 
 def test_quorum_fails_with_no_cross_score():

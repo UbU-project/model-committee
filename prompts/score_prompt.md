@@ -71,6 +71,8 @@ Rules:
 - Manual override is not allowed in v0.2.
 - Prefer a patch that is valid, minimal, auditable, and directly responsive.
 - Do not select a proposal whose patch failed mechanical validation.
+- Allowed question `Status:` values are {question_status_values}; a resolved question must use `Status: Solved`.
+- Reject `Status: Resolved` as a question-schema violation. Set `preserves_question_schema` to false and require `Status: Solved` as the fix; `Resolved by:` is a separate metadata field.
 - Do not score your own provider's proposal unless explicitly asked for diagnostic self-score.
 
 Return only JSON.

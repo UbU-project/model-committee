@@ -10,11 +10,28 @@ Do not return prose outside the JSON object.
 
 Question ID: `{question_id}`  
 Question title: `{question_title}`  
-Base commit: `{base_commit}`
+Repository working tree: `{repo_path}`
+
+HEAD commit (provenance only): `{base_commit}`
 
 ```markdown
 {question_block}
 ```
+
+## Patch baseline
+
+The patch must apply to the **current working-tree files** in the repository above.
+The selected question and context excerpts come from that working tree, which may
+include uncommitted ranking and metadata updates.
+
+- Set the JSON `base_commit` field to `{base_commit}` for provenance. It does not
+  define the patch's file contents: do not use `git show HEAD:<path>` or the Git index
+  as the original version when it differs from the working tree.
+- Use exact working-tree lines for all removed and unchanged lines. Preserve existing
+  metadata updates and exclude unrelated edits from the proposal.
+- To generate the diff, compare unmodified working-tree copies with the proposed
+  contents. Validate against the working tree with `git apply --check`; a successful
+  `git apply --check --cached` checks the index and is insufficient.
 
 ## Canonical design context
 
@@ -66,6 +83,9 @@ Your output must satisfy this schema:
   - `PLANNING_KERNEL_CONTRACT.md`
 - Do not modify `README.md`, `OUTREACH.md`, hidden files, scripts, code files, or generated logs.
 - Preserve the single-line metadata format in `OPEN_QUESTIONS.md`.
+- Allowed values for `Status:` are {question_status_values}.
+- When resolving a question, set its metadata to `Status: Solved` and set `Resolved by:` to the resolving decision id(s).
+- Never write `Status: Resolved`; `Resolved by:` is a separate metadata field.
 - The `patch` string must be a raw unified diff as produced by `git diff`; do not wrap it in markdown fences or prose.
 - Every file diff must start with `diff --git a/<path> b/<path>`, followed by `--- a/<path>` and `+++ b/<path>`.
 - Every hunk must include accurate `@@ -old_start,old_count +new_start,new_count @@` ranges and enough unchanged context for `git apply --check` to apply without `--recount`.

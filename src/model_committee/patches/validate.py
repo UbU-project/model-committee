@@ -6,7 +6,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from model_committee.constants import ALLOWED_PATCH_FILES
-from model_committee.errors import PatchValidationError
+from model_committee.errors import ParseError, PatchValidationError
+from model_committee.markdown.questions_parser import parse_questions_file
 from model_committee.patches.extract import enforce_allowed_patch_files
 
 ALLOWED_PATCH_FILE_ORDER = (
@@ -24,12 +25,22 @@ class PatchValidationResult(BaseModel):
     patch_applies: bool
     allowlist_passed: bool
     changed_files: list[str]
+    question_schema_passed: bool = False
     error: str | None = None
     normalized_patch: str | None = None
     warnings: list[str] = Field(default_factory=list)
     ordinary_error: str | None = None
     recount_error: str | None = None
     normalization_error: str | None = None
+
+    @property
+    def valid(self) -> bool:
+        return (
+            self.patch_applies
+            and self.allowlist_passed
+            and self.question_schema_passed
+            and self.error is None
+        )
 
 
 def _result_text(result: subprocess.CompletedProcess[str]) -> str:
@@ -133,7 +144,55 @@ def _normalize_patch_with_recount(
         return normalized_patch, changed_files, None
 
 
-def validate_patch(repo: Path, proposal_id: str, patch: str) -> PatchValidationResult:
+def _question_schema_error(repo: Path, patch: str, questions_resolved: list[str]) -> str | None:
+    """Validate the patched questions without changing the source worktree or index."""
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_repo = Path(temp_dir)
+            (temp_repo / "OPEN_QUESTIONS.md").write_bytes((repo / "OPEN_QUESTIONS.md").read_bytes())
+            apply = _run_git_apply(temp_repo, patch, ["--include=OPEN_QUESTIONS.md"])
+            if apply.returncode != 0:
+                return _result_text(apply)
+            questions = {
+                question.question_id: question
+                for question in parse_questions_file(temp_repo / "OPEN_QUESTIONS.md")
+            }
+            for question_id in questions_resolved:
+                question = questions.get(question_id)
+                if question is None:
+                    return f"{question_id}: declared resolved question is missing from OPEN_QUESTIONS.md"
+                if question.metadata.status != "Solved":
+                    return (
+                        f"{question_id}: declared resolved question must use Status: Solved "
+                        f"(found Status: {question.metadata.status})"
+                    )
+    except (ParseError, OSError, UnicodeError) as exc:
+        return str(exc)
+    return None
+
+
+def validate_patch(
+    repo: Path,
+    proposal_id: str,
+    patch: str,
+    *,
+    questions_resolved: list[str] | None = None,
+) -> PatchValidationResult:
+    result = _validate_patch_application(repo, proposal_id, patch)
+    if not (result.patch_applies and result.allowlist_passed):
+        return result
+    if "OPEN_QUESTIONS.md" in result.changed_files or questions_resolved:
+        schema_error = _question_schema_error(
+            repo, result.normalized_patch or patch, questions_resolved or []
+        )
+        if schema_error:
+            result.error = f"Question schema validation failed: {schema_error}"
+            return result
+    result.question_schema_passed = True
+    return result
+
+
+def _validate_patch_application(repo: Path, proposal_id: str, patch: str) -> PatchValidationResult:
     if "diff --git" not in patch:
         normalized_patch, normalized_changed_files, normalization_error = (
             _normalize_patch_with_recount(repo, patch)

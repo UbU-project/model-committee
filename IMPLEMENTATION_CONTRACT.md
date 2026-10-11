@@ -516,6 +516,21 @@ files outside the allowlist
 
 `work-select` must not apply patches.
 
+After the Git application and allowlist checks, validate changes to
+`OPEN_QUESTIONS.md` by applying the patch to an isolated copy and parsing the
+resulting question metadata. Allowed `Status:` values are `Open`, `Solved`,
+`Deferred`, `Superseded`, `Archived`, and `Decomposed`. `Status: Resolved` is
+invalid; a resolved question must use `Status: Solved` and record its decision
+references in `Resolved by:`. Work and scoring prompts must state this rule.
+Every question listed in a proposal's `questions_resolved` must exist in the
+resulting repository with `Status: Solved`.
+
+Record question-schema validation separately from Git applicability. Only
+proposals passing all checks may be scored or selected. `work-select` must
+revalidate proposals against the current repository and recompute quorum,
+including for runs with older cached validation results. `uber-loop` must
+validate the selected patch before applying it to the design repository.
+
 ---
 
 ## 16. Test Commands

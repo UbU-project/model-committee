@@ -4,6 +4,7 @@ from pathlib import Path
 from model_committee.constants import PROMPT_SIZE_WARNING_LIMIT
 from model_committee.context.closure import ClosureResult, RepoContext, compute_closure
 from model_committee.context.render import next_free_ids, render_excerpts
+from model_committee.markdown.questions_parser import STATUS_VALUES
 from model_committee.responses.schema_files import WORK_PROPOSAL_SCHEMA
 
 
@@ -15,7 +16,9 @@ def render_work_prompt(repo: Path, question, base_commit: str) -> tuple[str, boo
     rendered = template.format(
         question_id=question.question_id,
         question_title=question.title,
+        repo_path=str(repo.resolve()),
         question_block=question.block,
+        question_status_values=", ".join(f"`{status}`" for status in sorted(STATUS_VALUES)),
         base_commit=base_commit,
         context_excerpts=render_excerpts(
             context, closure, exclude_question_id=question.question_id

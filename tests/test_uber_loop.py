@@ -78,6 +78,8 @@ def git_operation(command: list[str], workspace: LoopWorkspace) -> str | None:
     repo = Path(command[2]).resolve()
     args = command[3:]
     if args[0] == "apply":
+        if "--check" in args:
+            return None
         return "apply"
     if args[0] in {"add", "commit"}:
         prefix = "design" if repo == workspace.repo else "artifact"
@@ -252,6 +254,45 @@ def test_failed_run_loop_does_not_apply_or_publish(loop_workspace, monkeypatch):
         uber_loop.run_uber_loop(workspace.repo, ModelCommitteeConfig(), None, workspace.runs_dir)
     generation.assert_called_once()
     assert git(workspace.repo, "log", "--format=%s") == "Initial commit"
+    assert git(workspace.artifacts, "log", "--format=%s") == "Initial commit"
+    assert not (workspace.artifacts / "runs").exists()
+
+
+def test_resolved_status_stops_before_applying_or_committing(loop_workspace, monkeypatch):
+    workspace = loop_workspace
+    questions_path = workspace.repo / "OPEN_QUESTIONS.md"
+    original = (
+        Path(__file__)
+        .with_name("fixtures")
+        .joinpath("valid_repo", "OPEN_QUESTIONS.md")
+        .read_text(encoding="utf-8")
+    )
+    questions_path.write_text(original, encoding="utf-8")
+    git(workspace.repo, "add", "OPEN_QUESTIONS.md")
+    git(workspace.repo, "-c", "commit.gpgsign=false", "commit", "-m", "Add questions")
+    before_head = git(workspace.repo, "rev-parse", "HEAD")
+    run_dir = write_run(workspace, "invalid-status-run", "Initial design", "Updated design")
+    metadata = next(line for line in original.splitlines() if line.startswith("Status: Open"))
+    patch = (
+        "diff --git a/OPEN_QUESTIONS.md b/OPEN_QUESTIONS.md\n"
+        "--- a/OPEN_QUESTIONS.md\n"
+        "+++ b/OPEN_QUESTIONS.md\n"
+        "@@ -3,5 +3,5 @@\n"
+        " ## UBU-Q0001: Example Question\n \n"
+        f"-{metadata}\n+{metadata.replace('Status: Open', 'Status: Resolved', 1)}\n"
+        " \n ### Question\n"
+    )
+    (run_dir / "patches" / "selected.patch").write_text(patch, encoding="utf-8")
+    generation = Mock(return_value=run_dir)
+    monkeypatch.setattr(uber_loop, "run_loop", generation)
+
+    with pytest.raises(PatchValidationError, match="Invalid enum value for Status: Resolved"):
+        uber_loop.run_uber_loop(workspace.repo, ModelCommitteeConfig(), None, workspace.runs_dir)
+
+    generation.assert_called_once()
+    assert questions_path.read_text(encoding="utf-8") == original
+    assert git(workspace.repo, "rev-parse", "HEAD") == before_head
+    assert git(workspace.repo, "status", "--porcelain") == ""
     assert git(workspace.artifacts, "log", "--format=%s") == "Initial commit"
     assert not (workspace.artifacts / "runs").exists()
 

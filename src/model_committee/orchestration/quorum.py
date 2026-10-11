@@ -22,7 +22,7 @@ def evaluate_quorum(
     valid_work_proposal_ids = {
         proposal_id
         for proposal_id, validation in validations.items()
-        if validation.patch_applies and validation.allowlist_passed and proposal_id in proposals
+        if validation.valid and proposal_id in proposals
     }
     evidence_by_proposal: dict[str, list[ScoreMatrixRow]] = defaultdict(list)
     for row in score_matrix:

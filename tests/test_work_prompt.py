@@ -19,6 +19,8 @@ def test_work_prompt_requires_raw_git_diff_and_selected_question_anchor():
     assert "git apply --check" in prompt
     assert "## UBU-Q0001: Example Question" in prompt
     assert "its own `### Resolution` section" in prompt
+    assert "set its metadata to `Status: Solved`" in prompt
+    assert "Never write `Status: Resolved`" in prompt
     assert (
         "Do not insert selected-question resolution text into any other question block." in prompt
     )
@@ -42,6 +44,8 @@ def test_score_prompt_includes_static_provider_weights():
     assert "## Provider weights" in prompt
     assert '"codex": 1.0' in prompt
     assert "historical diagnostic context only in v0.2" in prompt
+    assert "a resolved question must use `Status: Solved`" in prompt
+    assert "Reject `Status: Resolved` as a question-schema violation" in prompt
 
 
 def test_work_prompt_renders_excerpts_not_whole_files():

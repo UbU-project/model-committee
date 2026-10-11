@@ -122,7 +122,12 @@ def run_work_generate(
                 run_dir, prompt_path, schemas.work_proposal_schema
             )
             parsed_name, patch_name = _work_artifact_names(provider.provider_id)
-            validation = validate_patch(repo, proposal.proposal_id, proposal.patch)
+            validation = validate_patch(
+                repo,
+                proposal.proposal_id,
+                proposal.patch,
+                questions_resolved=proposal.questions_resolved,
+            )
             if validation.normalized_patch is not None:
                 validation_notes = list(proposal.validation_notes)
                 for warning in validation.warnings:
@@ -139,7 +144,7 @@ def run_work_generate(
             write_parsed_json(parsed_path, proposal)
             (run_dir / "patches" / patch_name).write_text(proposal.patch, encoding="utf-8")
             validation_results.append(validation.model_dump())
-            if validation.patch_applies and validation.allowlist_passed:
+            if validation.valid:
                 valid_count += 1
             append_provider_success(
                 manifest,
@@ -159,13 +164,16 @@ def run_work_generate(
             )
     for failure in manifest.provider_failures:
         failure.quorum_met = valid_count > 0
-    (run_dir / "parsed" / "patch_validation_results.json").write_text(
+    validation_path = run_dir / "parsed" / "patch_validation_results.json"
+    validation_path.write_text(
         json.dumps(validation_results, indent=2) + "\n", encoding="utf-8"
     )
     if valid_count == 0:
         manifest.status = RunStatus.FAILED
         write_manifest(run_dir, manifest)
-        raise PatchValidationError("no valid patch proposals")
+        raise PatchValidationError(
+            f"no valid patch proposals; see {validation_path} and {run_dir / 'manifest.json'}"
+        )
     manifest.status = RunStatus.WAITING_FOR_SCORE
     write_manifest(run_dir, manifest)
     return run_dir

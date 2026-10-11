@@ -1,12 +1,17 @@
+import difflib
 import json
 from pathlib import Path
 
+import pytest
+
 from model_committee.cli import main
 from model_committee.config import ModelCommitteeConfig
-from model_committee.errors import ProviderError
+from model_committee.errors import PatchValidationError, ProviderError
 from model_committee.orchestration import work_generate
+from model_committee.orchestration.rank import run_rank
 from model_committee.providers.fake import _candidate_proposals_from_prompt
 from model_committee.responses.schemas import WorkProposal
+from model_committee.runs.layout import get_base_commit
 
 
 def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
@@ -133,6 +138,74 @@ def test_secondary_provider_failure_is_logged_without_aborting(
     assert failure["failure_class"] == "ProviderError"
     assert failure["timeout_seconds"] == 17
     assert failure["quorum_met"] is True
+
+
+def test_stale_head_patch_reports_diagnostics_and_preserves_ranked_worktree(
+    git_fixture_repo, tmp_path, monkeypatch
+):
+    questions_path = git_fixture_repo / "OPEN_QUESTIONS.md"
+    original = questions_path.read_text(encoding="utf-8")
+    base_commit = get_base_commit(git_fixture_repo)
+    updated = original.replace("Status: Open", "Status: Solved", 1).replace(
+        "Resolved by: Unresolved", "Resolved by: UBU-D0001", 1
+    )
+    stale_patch = "diff --git a/OPEN_QUESTIONS.md b/OPEN_QUESTIONS.md\n" + "".join(
+        difflib.unified_diff(
+            original.splitlines(keepends=True),
+            updated.splitlines(keepends=True),
+            fromfile="a/OPEN_QUESTIONS.md",
+            tofile="b/OPEN_QUESTIONS.md",
+        )
+    )
+    proposal = WorkProposal.model_validate_json(
+        Path("tests/fixtures/fake_responses/codex_work_response.valid.json").read_text(
+            encoding="utf-8"
+        )
+    ).model_copy(
+        update={
+            "patch": stale_patch,
+            "base_commit": base_commit,
+            "changed_files": ["OPEN_QUESTIONS.md"],
+            "questions_resolved": ["UBU-Q0001"],
+        }
+    )
+    run_rank(git_fixture_repo)
+    ranked = questions_path.read_text(encoding="utf-8")
+    assert ranked != original
+
+    def generate(self, run_dir, prompt_path, schema_path):
+        prompt = prompt_path.read_text(encoding="utf-8")
+        metadata = next(line for line in ranked.splitlines() if line.startswith("Status: Open"))
+        assert metadata in prompt
+        assert f"Repository working tree: `{git_fixture_repo.resolve()}`" in prompt
+        assert f"HEAD commit (provenance only): `{base_commit}`" in prompt
+        assert "**current working-tree files**" in prompt
+        return proposal
+
+    monkeypatch.setattr(work_generate.CodexProvider, "generate_work_proposal", generate)
+    config = ModelCommitteeConfig.model_validate({"claude": {"enabled": False}})
+    runs_dir = tmp_path / "runs"
+    with pytest.raises(PatchValidationError, match="no valid patch proposals") as exc_info:
+        work_generate.run_work_generate(
+            git_fixture_repo, "UBU-Q0001", config, None, runs_dir, False, "test"
+        )
+
+    run_dir = next(runs_dir.iterdir())
+    validation_path = run_dir / "parsed" / "patch_validation_results.json"
+    manifest_path = run_dir / "manifest.json"
+    assert str(validation_path) in str(exc_info.value)
+    assert str(manifest_path) in str(exc_info.value)
+    validations = json.loads(validation_path.read_text(encoding="utf-8"))
+    assert len(validations) == 1
+    assert not validations[0]["patch_applies"]
+    assert "OPEN_QUESTIONS.md" in validations[0]["ordinary_error"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["status"] == "failed"
+    assert manifest["providers_succeeded"] == ["codex"]
+    assert manifest["providers_failed"] == []
+    assert (run_dir / "snapshot" / "OPEN_QUESTIONS.md").read_text(encoding="utf-8") == ranked
+    assert questions_path.read_text(encoding="utf-8") == ranked
+    assert get_base_commit(git_fixture_repo) == base_commit
 
 
 def test_candidate_proposals_from_prompt_parses_score_prompt_format():

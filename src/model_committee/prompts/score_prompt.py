@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from model_committee.constants import PROMPT_SIZE_WARNING_LIMIT
+from model_committee.markdown.questions_parser import STATUS_VALUES
 from model_committee.responses.schema_files import SCORE_RESULT_SCHEMA
 
 
@@ -19,6 +20,7 @@ def render_score_prompt(
         question_id=question.question_id,
         question_title=question.title,
         question_block=question.block,
+        question_status_values=", ".join(f"`{status}`" for status in sorted(STATUS_VALUES)),
         base_commit=base_commit,
         candidate_proposals_json=json.dumps(candidate_proposals, indent=2),
         patch_validation_results_json=json.dumps(patch_validation_results, indent=2),

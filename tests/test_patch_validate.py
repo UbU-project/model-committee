@@ -1,9 +1,12 @@
+import difflib
 import json
+import re
 import subprocess
 
 import pytest
 
 from model_committee.orchestration.work_select import run_work_select
+from model_committee.markdown.questions_parser import STATUS_VALUES
 from model_committee.patches.extract import enforce_allowed_patch_files
 from model_committee.patches.validate import (
     POSIX_NORMALIZATION_WARNING,
@@ -80,6 +83,133 @@ def test_patch_validation_rejects_forbidden_file(git_fixture_repo):
     assert result.ordinary_error is None
     assert result.recount_error is None
     assert result.normalized_patch is None
+
+
+def _questions_patch(repo, updated_text, style="git"):
+    original_text = (repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8")
+    patch = "".join(
+        difflib.unified_diff(
+            original_text.splitlines(keepends=True),
+            updated_text.splitlines(keepends=True),
+            fromfile="a/OPEN_QUESTIONS.md",
+            tofile="b/OPEN_QUESTIONS.md",
+        )
+    )
+    if style != "posix":
+        patch = "diff --git a/OPEN_QUESTIONS.md b/OPEN_QUESTIONS.md\n" + patch
+    if style == "recount":
+        patch = re.sub(
+            r"@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@",
+            r"@@ -\g<1>,999 +\g<2>,999 @@",
+            patch,
+            count=1,
+        )
+    return patch
+
+
+@pytest.mark.parametrize("style", ["git", "recount", "posix"])
+@pytest.mark.parametrize("status", ["Resolved", "Closed", "solved"])
+def test_patch_validation_rejects_invalid_question_status(git_fixture_repo, style, status):
+    questions_path = git_fixture_repo / "OPEN_QUESTIONS.md"
+    original = questions_path.read_text(encoding="utf-8")
+    index_before = subprocess.check_output(["git", "-C", str(git_fixture_repo), "write-tree"])
+    patch = _questions_patch(
+        git_fixture_repo, original.replace("Status: Open", f"Status: {status}", 1), style
+    )
+
+    result = validate_patch(git_fixture_repo, "invalid-status", patch)
+
+    assert result.error is not None
+    assert f"UBU-Q0001: Invalid enum value for Status: {status}" in result.error
+    assert result.patch_applies is True
+    assert result.allowlist_passed is True
+    assert result.question_schema_passed is False
+    assert result.valid is False
+    assert questions_path.read_text(encoding="utf-8") == original
+    assert subprocess.check_output(["git", "-C", str(git_fixture_repo), "write-tree"]) == (
+        index_before
+    )
+
+
+@pytest.mark.parametrize("status", sorted(STATUS_VALUES))
+def test_patch_validation_accepts_canonical_question_status(git_fixture_repo, status):
+    original = (git_fixture_repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8")
+    updated = original.replace("Status: Solved", f"Status: {status}", 1)
+    updated += "\nStatus: Resolved is invalid metadata, but can be discussed in prose.\n"
+    result = validate_patch(
+        git_fixture_repo, "valid-status", _questions_patch(git_fixture_repo, updated)
+    )
+
+    assert result.valid is True
+    assert result.question_schema_passed is True
+    assert result.error is None
+    assert (git_fixture_repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8") == original
+
+
+@pytest.mark.parametrize("style", ["git", "recount", "posix"])
+def test_patch_validation_accepts_solved_resolution(git_fixture_repo, style):
+    original = (git_fixture_repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8")
+    updated = original.replace("Status: Open", "Status: Solved", 1).replace(
+        "Resolved by: Unresolved", "Resolved by: UBU-D0001", 1
+    )
+    result = validate_patch(
+        git_fixture_repo, "solved", _questions_patch(git_fixture_repo, updated, style)
+    )
+
+    assert result.valid is True
+    assert result.question_schema_passed is True
+    assert result.error is None
+
+
+def test_patch_validation_accepts_repair_of_resolved_status(git_fixture_repo):
+    questions_path = git_fixture_repo / "OPEN_QUESTIONS.md"
+    invalid = questions_path.read_text(encoding="utf-8").replace(
+        "Status: Solved", "Status: Resolved", 1
+    )
+    questions_path.write_text(invalid, encoding="utf-8")
+    result = validate_patch(
+        git_fixture_repo,
+        "repair-status",
+        _questions_patch(
+            git_fixture_repo, invalid.replace("Status: Resolved", "Status: Solved", 1)
+        ),
+    )
+
+    assert result.valid is True
+    assert questions_path.read_text(encoding="utf-8") == invalid
+
+
+@pytest.mark.parametrize("status", sorted(STATUS_VALUES))
+def test_declared_resolved_question_must_be_solved(git_fixture_repo, status):
+    original = (git_fixture_repo / "OPEN_QUESTIONS.md").read_text(encoding="utf-8")
+    updated = original.replace("Status: Open", f"Status: {status}", 1) + "\nResolution notes.\n"
+    result = validate_patch(
+        git_fixture_repo,
+        "declared-resolution",
+        _questions_patch(git_fixture_repo, updated),
+        questions_resolved=["UBU-Q0001"],
+    )
+
+    assert result.valid is (status == "Solved")
+    if status != "Solved":
+        assert "UBU-Q0001: declared resolved question must use Status: Solved" in result.error
+
+
+def test_declared_resolution_without_question_update_is_rejected(git_fixture_repo):
+    result = validate_patch(
+        git_fixture_repo, "missing-resolution", VALID_PATCH, questions_resolved=["UBU-Q0001"]
+    )
+    assert result.patch_applies is True
+    assert result.valid is False
+    assert "declared resolved question must use Status: Solved" in result.error
+
+
+def test_declared_resolution_of_missing_question_is_rejected(git_fixture_repo):
+    result = validate_patch(
+        git_fixture_repo, "missing-question", VALID_PATCH, questions_resolved=["UBU-Q9999"]
+    )
+    assert result.valid is False
+    assert "UBU-Q9999: declared resolved question is missing" in result.error
 
 
 def test_corrupt_hunk_count_patch_fails_ordinary_but_passes_recount(git_fixture_repo, tmp_path):

@@ -114,7 +114,7 @@ The rendered work prompt reached or exceeded 90% of the prompt size limit. Consi
 
 - Patch applies: {"yes" if selected_validation.patch_applies else "no"}
 - Patch allowlist passed: {"yes" if selected_validation.allowlist_passed else "no"}
-- Question schema preserved: {"yes" if not selected.validation_notes else "review required"}
+- Question schema preserved: {"yes" if selected_validation.question_schema_passed else "no"}
 """
         text += """
 ## Risks
@@ -128,6 +128,9 @@ The rendered work prompt reached or exceeded 90% of the prompt size limit. Consi
 
 No proposal passed automated quorum.
 """
+        for proposal_id, validation in validations.items():
+            if validation.error:
+                text += f"\n- `{proposal_id}`: {validation.error}\n"
 
     text += """
 ## Next Manual Steps

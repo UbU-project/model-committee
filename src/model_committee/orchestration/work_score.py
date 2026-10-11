@@ -195,7 +195,7 @@ def _proposal_is_mechanically_valid(
     proposal: WorkProposal, validations: dict[str, PatchValidationResult]
 ) -> bool:
     validation = validations.get(proposal.proposal_id)
-    return bool(validation and validation.patch_applies and validation.allowlist_passed)
+    return bool(validation and validation.valid)
 
 
 def _scoring_providers(config: ModelCommitteeConfig, repo: Path, fake_providers: bool):
@@ -255,7 +255,7 @@ def _write_aggregate_score_result(
                 implements_selected_work=all(row.implements_selected_work for row in valid_rows)
                 if valid_rows
                 else True,
-                preserves_question_schema=not proposals[aggregate.proposal_id].validation_notes,
+                preserves_question_schema=validation.question_schema_passed,
                 avoids_unnecessary_scope=all(row.avoids_unnecessary_scope for row in valid_rows)
                 if valid_rows
                 else True,

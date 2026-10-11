@@ -2,12 +2,12 @@ import json
 from pathlib import Path
 
 from model_committee.errors import HumanReviewRequired, SelectionError
-from model_committee.patches.validate import PatchValidationResult
+from model_committee.patches.validate import validate_patch
 from model_committee.responses.schemas import ScoreMatrixRow, WorkProposal
 from model_committee.runs.manifest import RunStatus, load_manifest, write_manifest
 from model_committee.runs.review import write_review
 
-from .quorum import evaluate_quorum  # fallback when manifest has no stored quorum
+from .quorum import evaluate_quorum
 
 COMMIT_MESSAGE_PREFIX = "UMC: "
 
@@ -27,23 +27,29 @@ def run_work_select(run_dir: Path) -> None:
             for path in sorted((run_dir / "parsed").glob("*_proposal.json"))
         ]
     }
+    # Recheck the actual proposals, including runs created before schema validation
+    # existed. Cached Git checks or scorer approval cannot establish schema validity.
+    (run_dir / "patches" / "selected.patch").unlink(missing_ok=True)
+    (run_dir / "commit_message.txt").unlink(missing_ok=True)
     validations = {
-        item["proposal_id"]: PatchValidationResult.model_validate(item)
-        for item in json.loads(
-            (run_dir / "parsed" / "patch_validation_results.json").read_text(encoding="utf-8")
+        proposal_id: validate_patch(
+            Path(manifest.repo_path),
+            proposal_id,
+            proposal.patch,
+            questions_resolved=proposal.questions_resolved,
         )
+        for proposal_id, proposal in proposals.items()
     }
+    (run_dir / "parsed" / "patch_validation_results.json").write_text(
+        json.dumps([item.model_dump() for item in validations.values()], indent=2) + "\n",
+        encoding="utf-8",
+    )
     score_matrix = _load_score_matrix(run_dir, manifest)
-    if manifest.quorum_result is not None and manifest.score_aggregates:
-        quorum = manifest.quorum_result
-        aggregates = manifest.score_aggregates
-        disagreement_flags = manifest.disagreement_flags
-    else:
-        aggregates, disagreement_flags, quorum = evaluate_quorum(
-            proposals=proposals,
-            validations=validations,
-            score_matrix=score_matrix,
-        )
+    aggregates, disagreement_flags, quorum = evaluate_quorum(
+        proposals=proposals,
+        validations=validations,
+        score_matrix=score_matrix,
+    )
     selected_id = quorum.selected_proposal_id
     manifest.score_matrix = score_matrix
     manifest.score_aggregates = aggregates
@@ -78,7 +84,7 @@ def run_work_select(run_dir: Path) -> None:
         raise SelectionError("selected proposal does not exist")
     proposal = proposals[selected_id]
     validation = validations.get(selected_id)
-    if validation is None or not (validation.patch_applies and validation.allowlist_passed):
+    if validation is None or not validation.valid:
         manifest.status = RunStatus.HUMAN_REVIEW_REQUIRED
         manifest.phase = "work-select"
         manifest.human_review_required = True

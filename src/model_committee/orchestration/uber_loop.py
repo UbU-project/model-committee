@@ -4,8 +4,10 @@ import subprocess
 from pathlib import Path
 
 from model_committee.config import ModelCommitteeConfig
+from model_committee.errors import PatchValidationError
 from model_committee.orchestration.run_loop import run_loop
 from model_committee.patches.extract import enforce_allowed_patch_files
+from model_committee.patches.validate import validate_patch
 
 
 def _git(repo: Path, *args: str, capture_output: bool = False) -> subprocess.CompletedProcess[str]:
@@ -56,11 +58,15 @@ def run_uber_loop(
 
         patch_path = (run_dir / "patches" / "selected.patch").resolve(strict=True)
         message_path = (run_dir / "commit_message.txt").resolve(strict=True)
-        changed_files = enforce_allowed_patch_files(patch_path.read_text(encoding="utf-8"))
+        patch = patch_path.read_text(encoding="utf-8")
+        changed_files = enforce_allowed_patch_files(patch)
         destination = artifacts_repo / "runs" / run_dir.name
         if destination.exists():
             raise RuntimeError(f"artifact run already exists: {destination}")
 
+        validation = validate_patch(repo, run_dir.name, patch)
+        if not validation.valid:
+            raise PatchValidationError(validation.error or "selected patch failed validation")
         _git(repo, "apply", str(patch_path))
         _git(repo, "add", "--", *changed_files)
         _git(repo, "commit", "-S", "-F", str(message_path))
