@@ -31,6 +31,12 @@ copies that exact run, including a custom `--runs-dir`, to
 pushes the artifact repository before repeating. The artifact repository path is
 relative to the current working directory.
 
+Each invocation works through eligible questions in ranking order before revisiting
+an incomplete question. If every currently eligible question has been worked on,
+the next pass starts with the highest-ranked question still eligible. This rotation
+is kept in memory and resets when `uber-loop` restarts. Questions marked
+`Human approval required` continue through the existing automated-selection checks.
+
 Configure Git signing in both repositories and an existing artifact repository
 with a push remote. Both indexes must be empty before each iteration; unstaged
 edits are allowed. Staging a selected patch's file also includes existing edits

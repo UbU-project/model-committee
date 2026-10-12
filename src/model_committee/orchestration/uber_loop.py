@@ -8,6 +8,7 @@ from model_committee.errors import PatchValidationError
 from model_committee.orchestration.run_loop import run_loop
 from model_committee.patches.extract import enforce_allowed_patch_files
 from model_committee.patches.validate import validate_patch
+from model_committee.runs.manifest import load_manifest
 
 
 def _git(repo: Path, *args: str, capture_output: bool = False) -> subprocess.CompletedProcess[str]:
@@ -41,6 +42,7 @@ def run_uber_loop(
 ) -> None:
     """Repeat selection, signed design commits, and artifact publication until failure."""
     artifacts_repo = Path("../model-committee-artifacts").resolve()
+    worked_question_ids: set[str] = set()
     while True:
         # Commits consume the whole index, so never include previously staged work.
         # Unstaged changes are allowed: ranking itself updates OPEN_QUESTIONS.md.
@@ -53,8 +55,10 @@ def run_uber_loop(
             runs_dir,
             fake_providers,
             phase_filter=phase_filter,
+            worked_question_ids=worked_question_ids.copy(),
         ).resolve(strict=True)
         print(run_dir.name, flush=True)
+        question_id = load_manifest(run_dir).selected_question_id
 
         patch_path = (run_dir / "patches" / "selected.patch").resolve(strict=True)
         message_path = (run_dir / "commit_message.txt").resolve(strict=True)
@@ -76,3 +80,7 @@ def run_uber_loop(
         _git(artifacts_repo, "add", "--", f"runs/{run_dir.name}")
         _git(artifacts_repo, "commit", "-S", "-m", f"UMC artifact {run_dir.name}")
         _git(artifacts_repo, "push")
+
+        if question_id in worked_question_ids:
+            worked_question_ids.clear()
+        worked_question_ids.add(question_id)

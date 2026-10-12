@@ -14,7 +14,18 @@ from model_committee.responses.schemas import WorkProposal
 from model_committee.runs.layout import get_base_commit
 
 
-def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
+@pytest.mark.parametrize("requires_human_review", [False, True])
+def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys, requires_human_review):
+    if requires_human_review:
+        questions_path = git_fixture_repo / "OPEN_QUESTIONS.md"
+        questions_path.write_text(
+            questions_path.read_text(encoding="utf-8").replace(
+                "Auto-choice eligibility: Auto eligible",
+                "Auto-choice eligibility: Human approval required",
+                1,
+            ),
+            encoding="utf-8",
+        )
     runs_dir = tmp_path / "runs"
     assert (
         main(
@@ -33,6 +44,11 @@ def test_fake_provider_golden_flow(git_fixture_repo, tmp_path, capsys):
     )
     run_id = capsys.readouterr().out.strip()
     run_dir = runs_dir / run_id
+    if requires_human_review:
+        for path in (run_dir / "parsed").glob("*_proposal.json"):
+            proposal = json.loads(path.read_text(encoding="utf-8"))
+            proposal["requires_human_review"] = True
+            path.write_text(json.dumps(proposal), encoding="utf-8")
     assert main(["work-score", "--run", str(run_dir), "--fake-providers"]) == 0
     assert main(["work-select", "--run", str(run_dir)]) == 0
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))

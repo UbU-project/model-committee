@@ -10,6 +10,7 @@ from model_committee.config import ModelCommitteeConfig
 from model_committee.constants import EXIT_RUNTIME_ERROR, EXIT_USER_CANCELED
 from model_committee.errors import PatchValidationError
 from model_committee.orchestration import uber_loop
+from model_committee.runs.manifest import RunManifest, RunStatus, utc_now_text, write_manifest
 
 
 REAL_SUBPROCESS_RUN = subprocess.run
@@ -56,7 +57,14 @@ def loop_workspace(tmp_path: Path, monkeypatch) -> LoopWorkspace:
     return LoopWorkspace(committee, repo, artifacts, remote, Path("custom runs"))
 
 
-def write_run(workspace: LoopWorkspace, run_id: str, before: str, after: str) -> Path:
+def write_run(
+    workspace: LoopWorkspace,
+    run_id: str,
+    before: str,
+    after: str,
+    *,
+    question_id: str = "UBU-Q0001",
+) -> Path:
     run_dir = workspace.runs_dir / run_id
     (run_dir / "patches").mkdir(parents=True)
     (run_dir / "raw").mkdir()
@@ -71,6 +79,18 @@ def write_run(workspace: LoopWorkspace, run_id: str, before: str, after: str) ->
     (run_dir / "commit_message.txt").write_text(f"Update design: {after}\n", encoding="utf-8")
     (run_dir / "review.md").write_text(f"Review for {run_id}\n", encoding="utf-8")
     (run_dir / "raw" / "response.json").write_text('{"result": "selected"}\n', encoding="utf-8")
+    write_manifest(
+        run_dir,
+        RunManifest(
+            run_id=run_id,
+            created_at_utc=utc_now_text(),
+            repo_path=str(workspace.repo),
+            base_commit=git(workspace.repo, "rev-parse", "HEAD"),
+            selected_question_id=question_id,
+            phase="work-select",
+            status=RunStatus.SELECTED,
+        ),
+    )
     return run_dir
 
 
@@ -119,7 +139,13 @@ def test_repeats_only_after_signed_commits_and_artifact_push(loop_workspace, mon
             assert git(workspace.repo, "show", "HEAD:DESIGN.md") == changes[cycle]
         if cycle == 2:
             raise KeyboardInterrupt
-        run_dir = write_run(workspace, f"run-{cycle + 1}", changes[cycle], changes[cycle + 1])
+        run_dir = write_run(
+            workspace,
+            f"run-{cycle + 1}",
+            changes[cycle],
+            changes[cycle + 1],
+            question_id=f"UBU-Q{cycle + 1:04d}",
+        )
         runs.append(run_dir)
         return run_dir
 
@@ -139,10 +165,10 @@ def test_repeats_only_after_signed_commits_and_artifact_push(loop_workspace, mon
         == [
             (
                 (workspace.repo, config, config_path, workspace.runs_dir, True),
-                {"phase_filter": "Phase 4"},
+                {"phase_filter": "Phase 4", "worked_question_ids": worked_ids},
             )
+            for worked_ids in (set(), {"UBU-Q0001"}, {"UBU-Q0001", "UBU-Q0002"})
         ]
-        * 3
     )
     for run_dir in runs:
         source = run_dir.resolve()
@@ -183,6 +209,45 @@ def test_repeats_only_after_signed_commits_and_artifact_push(loop_workspace, mon
     assert git(workspace.remote, "log", "-2", "--format=%s").splitlines() == [
         "UMC artifact run-2",
         "UMC artifact run-1",
+    ]
+
+
+def test_revisiting_question_starts_new_pass_after_successful_publication(
+    loop_workspace, monkeypatch
+):
+    workspace = loop_workspace
+    changes = ["Initial design", "First design", "Second design", "Third design"]
+    questions = ["UBU-Q0001", "UBU-Q0002", "UBU-Q0001"]
+    runs = [
+        write_run(
+            workspace,
+            f"rotation-{index}",
+            changes[index],
+            changes[index + 1],
+            question_id=question_id,
+        )
+        for index, question_id in enumerate(questions)
+    ]
+    generation = Mock(side_effect=[*runs, KeyboardInterrupt()])
+    monkeypatch.setattr(uber_loop, "run_loop", generation)
+    monkeypatch.setattr(
+        uber_loop.subprocess,
+        "run",
+        lambda command, **kwargs: REAL_SUBPROCESS_RUN(without_signing(command), **kwargs),
+    )
+
+    with pytest.raises(KeyboardInterrupt):
+        uber_loop.run_uber_loop(workspace.repo, ModelCommitteeConfig(), None, workspace.runs_dir)
+
+    assert [call.kwargs["worked_question_ids"] for call in generation.call_args_list] == [
+        set(),
+        {"UBU-Q0001"},
+        {"UBU-Q0001", "UBU-Q0002"},
+        {"UBU-Q0001"},
+    ]
+    assert git(workspace.repo, "show", "HEAD:DESIGN.md") == "Third design"
+    assert git(workspace.remote, "log", "-3", "--format=%s").splitlines() == [
+        f"UMC artifact {run_dir.name}" for run_dir in reversed(runs)
     ]
 
 

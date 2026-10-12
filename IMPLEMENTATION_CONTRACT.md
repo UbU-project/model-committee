@@ -157,7 +157,13 @@ Commands:
 `uber-loop` accepts all `run-loop` options: `--repo`, `--config`, `--runs-dir`,
 `--fake-providers`, and `--phase`. It repeatedly:
 
-1. Calls `run-loop` with the same options, including the phase filter.
+1. Calls `run-loop` with the same options, including the phase filter. Within one
+   invocation, prefer eligible questions not yet worked in the current pass.
+   Once all currently eligible questions have been worked, revisit the
+   highest-ranked eligible question and begin a new pass. Update this rotation
+   only after the iteration's commits and artifact push succeed. Rotation is
+   in-memory state and resets on restart; standalone `run-loop` keeps ordinary
+   ranking. `Human approval required` metadata does not stop `uber-loop`.
 2. Applies the successful run's `patches/selected.patch` to `--repo`.
 3. Stages the paths changed by that patch.
 4. Creates a signed design commit with `git commit -S -F` using that run's
